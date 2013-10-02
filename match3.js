@@ -407,13 +407,13 @@ function swap(a, b, swapBack){
 	
 		frame++;
 		if(frame == TOTAL_FRAME){
+			toggleClickEvent(true);
 			a.swapWith(b);
 			if(!swapBack){
 				checkMatches(function(){
 					swap(a,b, true);
 				}); // No match found, swap again
 			}
-			toggleClickEvent(true);
 		}else{
 			requestAnimationFrame(moveSwappedToken);
 		}
@@ -580,16 +580,12 @@ function waitForAnimationFinish(frame, callback){
 	toggleClickEvent(false);
 	var f = 0;
 	
-			console.log("wait " + frame);
-	
 	wait();
 	function wait(){
 		f++;
 		if (f < frame){
-			console.log("still wait " + f);
 			requestAnimationFrame(wait);
 		} else {
-			console.log("ok");
 			toggleClickEvent(true);
 			if (callback != undefined){
 				callback();

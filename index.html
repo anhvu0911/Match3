@@ -1,0 +1,33 @@
+<!--
+ * a match 3 game, practice on using HTML5 canvas 
+ * https://github.com/anhvu0911/Match3
+ *
+ * Author: Nguyen Huu Anh Vu (https://github.com/anhvu0911)
+ *
+ * Date: 2013-07-13
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta content="text/html; charset=UTF-8" http-equiv="Content-Type"/>
+	<script type="text/javascript" src="match3.js"></script>
+	<title>Match 3</title>
+</head>
+
+<body onload="main();return;">
+	<div id="mainGame">
+	
+		<!-- BOARD_WIDTH = (TOKEN_SIZE+SPACE)*TOKEN_PER_ROW - SPACE; //550 -->
+		<canvas id="gameCanvas" width="560" height="600" style="z-index: 1;>
+			<img src="images/fire.png"/>
+			<img src="images/water.png"/>
+			<img src="images/metal.png"/>
+			<img src="images/earth.png"/>
+			<img src="images/tree.png"/>
+			<img src="images/thunder.png"/>
+			<img src="images/air.png"/>
+		</canvas>
+	</div>
+</body>
+</html>

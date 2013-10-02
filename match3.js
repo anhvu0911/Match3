@@ -85,8 +85,8 @@ function Token(col, row){
 		board[tokenCol][tokenRow].col = board[thisCol][thisRow].col;
 		board[thisCol][thisRow].col = tempCol;
 		
-		/*this.calculateXY();
-		token.calculateXY();*/
+		this.calculateXY();
+		token.calculateXY();
 	}
 	
 	this.calculateXY();
@@ -245,14 +245,22 @@ function main(){
 		}
 	}
 	
-	// register mouse event
-	gameCanvas.addEventListener("click", selectToken, false);
+	toggleClickEvent(true);
 	
 	// TODO: Include dragging event
 	//gameCanvas.addEventListener("mousemove", dragToken, false);
 	
 	checkMatches();
 	draw();
+}
+
+// register mouse event
+function toggleClickEvent(on){
+	if(on){
+		gameCanvas.addEventListener("click", selectToken, false);
+	}else{
+		gameCanvas.removeEventListener("click", selectToken, false);
+	}
 }
 
 // Factory method, create random Token for col, row
@@ -380,12 +388,15 @@ function dragToken(e){
 }
 
 // Swap token a and b
-function swap(a, b){
-	console.log("swap");
+// swapBack: a boolean - if after swap, no match found, swap back
+function swap(a, b, swapBack){
+	toggleClickEvent(false);
 	
 	var frame = 0;
 	var deltaX = (b.x - a.x) / TOTAL_FRAME;
 	var deltaY = (b.y - a.y) / TOTAL_FRAME;
+	
+	moveSwappedToken();
 	
 	function moveSwappedToken(){
 		a.x += deltaX;
@@ -397,19 +408,32 @@ function swap(a, b){
 		frame++;
 		if(frame == TOTAL_FRAME){
 			a.swapWith(b);
-			checkMatches();
+			if(!swapBack){
+				checkMatches(function(){
+					swap(a,b, true);
+				}); // No match found, swap again
+			}
+			toggleClickEvent(true);
 		}else{
 			requestAnimationFrame(moveSwappedToken);
 		}
 	}
-	
-	moveSwappedToken();
+}
+
+// Find the list of matches, auto-call explode
+function checkMatches(callback){
+	var matchLists = findMatches();
+		
+	// Found some matches, explode them!
+	if(matchLists.length > 0){
+		explode(matchLists);
+	} else {
+		if (callback != undefined) callback();
+	}
 }
 
 // Search the matching pair, using trace algorithm
-function checkMatches(){
-	console.log("Check match");
-	
+function findMatches(){	
 	var matchLists = [];
 	var inMatchlist = false;
 	var current = null;
@@ -424,19 +448,13 @@ function checkMatches(){
 	
 	mergeMatchList();
 	
-	console.log("================FFFFFFFFFFFFFFFFFFFFFFFFFFF===================");
+	/*console.log("================Check Match===================");
 	for(i = 0; i < matchLists.length; i++){
 		for(j = 0; j < matchLists[i].length; j++){
 			console.log(matchLists[i][j]);		
 		}				
 		console.log("-----");
-	}
-	
-	// Found some matches, explode them!
-	if(matchLists.length > 0){
-		explode(matchLists);
-	}
-	
+	}*/
 
 	// Starting on a token, trace similar tokens
 	// matchLists: a list of all matches
@@ -460,12 +478,6 @@ function checkMatches(){
 				// Include token and nextToke check to allow a list of >3 tokens
 				if(matchLists[i].indexOf(token) > 0 && matchLists[i].indexOf(nextToken) > 0){
 					inMatchlist = true;
-					
-					/*if(matchLists[i] != tempMatchLists){
-						matchLists[i].merge(tempMatchLists);
-						matchLists.splice(matchLists.indexOf(tempMatchLists),1);
-						tempMatchLists = matchLists[i];
-					}*/
 				}
 			}
 			
@@ -495,6 +507,8 @@ function checkMatches(){
 			}
 		}
 	}
+	
+	return matchLists;
 }
 
 // TODO: Animation Explosion effect
@@ -507,8 +521,6 @@ function explode(matchLists){
 // TODO: Make animation of dropping
 // Temp: Replace with above appropriate tokens
 function dropDown(matchLists){
-	console.log("drop down");
-
 	// Merge all matches into An array of array
 	// each is a token with same column, sort row from low to high
 	var matches = [];
@@ -524,10 +536,6 @@ function dropDown(matchLists){
 		}
 	}
 	
-	for(var i = 0; i < matches.length; i++){
-		console.log(i + " " + matches[i]);
-	}
-	
 	// Start shift board[column] based on matches
 	for(var i = 0; i < matches.length; i++){
 		if(matches[i] == undefined) continue;
@@ -538,7 +546,6 @@ function dropDown(matchLists){
 		var token = null;
 		
 		while (currentBlankRow >= 0){
-			
 			// Found a match, this item will be removed
 			if (currentMatchIndex >= 0 && currentRow == matches[i][currentMatchIndex].row){
 				currentMatchIndex--;
@@ -555,9 +562,7 @@ function dropDown(matchLists){
 			}
 			
 			// Move all stock tokens? fill columns with new tokens
-			if (currentRow < 0){
-				console.log(" drop new token at " + currentBlankRow);
-				
+			if (currentRow < 0){				
 				token = createToken(i, currentBlankRow);
 				moveToken(token, token.x, token.y - matches[i].length*(TOKEN_SIZE + SPACE), token.x, token.y);
 				board[i][currentBlankRow] = token;
@@ -567,10 +572,34 @@ function dropDown(matchLists){
 			currentRow--;
 		}
 	}
+	
+	waitForAnimationFinish(TOTAL_FRAME*1.5, checkMatches);
+}
+
+function waitForAnimationFinish(frame, callback){
+	toggleClickEvent(false);
+	var f = 0;
+	
+			console.log("wait " + frame);
+	
+	wait();
+	function wait(){
+		f++;
+		if (f < frame){
+			console.log("still wait " + f);
+			requestAnimationFrame(wait);
+		} else {
+			console.log("ok");
+			toggleClickEvent(true);
+			if (callback != undefined){
+				callback();
+			}
+		}
+	}
 }
 
 // Move a token from start to end position
-function moveToken(token, startX, startY, endX, endY){
+function moveToken(token, startX, startY, endX, endY, callback){
 	var frame = 0;
 	var deltaX = (endX - startX) / TOTAL_FRAME;
 	var deltaY = (endY - startY) / TOTAL_FRAME;
@@ -586,11 +615,15 @@ function moveToken(token, startX, startY, endX, endY){
 		token.y += deltaY;
 	
 		frame++;
-		if(frame < TOTAL_FRAME){
+		if (frame < TOTAL_FRAME){
 			requestAnimationFrame(move);
-		}else{
+		} else {
 			token.x = endX;
 			token.y = endY;
+			
+			if (callback != undefined){
+				callback();
+			}
 		}
 	}
 }

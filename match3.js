@@ -428,7 +428,7 @@ function checkMatches(callback){
 	if(matchLists.length > 0){
 		explode(matchLists);
 	} else {
-		if (callback != undefined) callback();
+		if (typeof(callback) == 'function') callback();
 	}
 }
 
@@ -587,7 +587,7 @@ function waitForAnimationFinish(frame, callback){
 			requestAnimationFrame(wait);
 		} else {
 			toggleClickEvent(true);
-			if (callback != undefined){
+			if (typeof(callback) == 'function'){
 				callback();
 			}
 		}
@@ -617,9 +617,13 @@ function moveToken(token, startX, startY, endX, endY, callback){
 			token.x = endX;
 			token.y = endY;
 			
-			if (callback != undefined){
+			if (typeof(callback) == 'function'){
 				callback();
 			}
 		}
 	}
+}
+
+// Find a possible match
+function hint(){
 }

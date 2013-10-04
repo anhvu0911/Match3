@@ -38,8 +38,8 @@ function Cell(col, row){
 // 7 TYPES OF TOKEN
 //========================================================
 function Token(col, row){
-	this.col = col;
 	this.row = row;
+	this.col = col;
 	this.type = NULL_TOKEN;
 	this.selected = false;
 	this.calculateXY = function(){
@@ -250,6 +250,8 @@ function main(){
 	// TODO: Include dragging event
 	//gameCanvas.addEventListener("mousemove", dragToken, false);
 	
+	gameCanvas.addEventListener("keydown", hint, false);
+	
 	checkMatches();
 	draw();
 }
@@ -396,9 +398,7 @@ function swap(a, b, swapBack){
 	var deltaX = (b.x - a.x) / TOTAL_FRAME;
 	var deltaY = (b.y - a.y) / TOTAL_FRAME;
 	
-	moveSwappedToken();
-	
-	function moveSwappedToken(){
+	(function moveSwappedToken(){
 		a.x += deltaX;
 		a.y += deltaY;
 		
@@ -417,7 +417,7 @@ function swap(a, b, swapBack){
 		}else{
 			requestAnimationFrame(moveSwappedToken);
 		}
-	}
+	})();
 }
 
 // Find the list of matches, auto-call explode
@@ -432,21 +432,30 @@ function checkMatches(callback){
 	}
 }
 
+// TODO: Optimization, some token does not need to search again
 // Search the matching pair, using trace algorithm
 function findMatches(){	
 	var matchLists = [];
-	var inMatchlist = false;
 	var current = null;
-	var i,j;
-	for(i = 0; i < TOKEN_PER_COL; i++){
-		for(j = 0; j < TOKEN_PER_ROW; j++){
+	for(var i = 0; i < TOKEN_PER_COL; i++){
+		for(var j = 0; j < TOKEN_PER_ROW; j++){
 			current = board[i][j];
 			traceAndAddToMatchList([current], current, 0, 1, false); // down
 			traceAndAddToMatchList([current], current, 1, 0, false); // right
 		}
 	}
 	
-	mergeMatchList();
+	// TODO: Merge this with traceAndAddToMatchList, filter while tracing, OR MAY BE NOT, use for explosion 5- L turn tokens
+	// Merge match lists that have the same tokens
+	for(i = 0; i < matchLists.length - 1; i++){
+		for(j = i+1; j < matchLists.length; j++){
+			if(matchLists[i].hasCommonElement(matchLists[j])){
+				matchLists[i].merge(matchLists[j]);
+				matchLists.splice(j,1);
+				break;
+			}	
+		}
+	}
 	
 	/*console.log("================Check Match===================");
 	for(i = 0; i < matchLists.length; i++){
@@ -490,20 +499,6 @@ function findMatches(){
 				}
 				
 				traceAndAddToMatchList(tempMatchLists, nextToken, rowIndent, colIndent, added);
-			}
-		}
-	}
-	
-	// TODO: Merge this with traceAndAddToMatchList, filter while tracing, OR MAY BE NOT, use for explosion 5- L turn tokens
-	// Merge match lists that have the same tokens
-	function mergeMatchList(){
-		for(i = 0; i < matchLists.length - 1; i++){
-			for(j = i+1; j < matchLists.length; j++){
-				if(matchLists[i].hasCommonElement(matchLists[j])){
-					matchLists[i].merge(matchLists[j]);
-					matchLists.splice(j,1);
-					break;
-				}	
 			}
 		}
 	}
@@ -580,8 +575,7 @@ function waitForAnimationFinish(frame, callback){
 	toggleClickEvent(false);
 	var f = 0;
 	
-	wait();
-	function wait(){
+	(function wait(){
 		f++;
 		if (f < frame){
 			requestAnimationFrame(wait);
@@ -591,7 +585,7 @@ function waitForAnimationFinish(frame, callback){
 				callback();
 			}
 		}
-	}
+	})();
 }
 
 // Move a token from start to end position
@@ -602,9 +596,7 @@ function moveToken(token, startX, startY, endX, endY, callback){
 	token.x = startX;
 	token.y = startY;
 	
-	move();
-	
-	function move(){
+	(function move(){
 				   
 		// Change it into new position  
 		token.x += deltaX;
@@ -621,9 +613,138 @@ function moveToken(token, startX, startY, endX, endY, callback){
 				callback();
 			}
 		}
-	}
+	})();
 }
 
-// Find a possible match
-function hint(){
+// Find all possible matches
+function hint(e){
+	var hintList = [];
+
+	var current = null;
+	for(var i = 0; i < TOKEN_PER_COL; i++){
+		for(var j = 0; j < TOKEN_PER_ROW; j++){
+			current = board[i][j];
+			traceAndAddToPotentialList([current], current, 0, 1, false); // down
+			traceAndAddToPotentialList([current], current, 1, 0, false); // right
+		}
+	}
+	
+	console.log("================Check Hint===================");
+	for(i = 0; i < hintList.length; i++){
+		hintList[i].selected = true;
+		console.log("ok: " + hintList[i]);
+	}
+	
+	function traceAndAddToPotentialList(tempMatchLists, token, rowIndent, colIndent, added){
+
+		// prevent out of bound
+		if(board[token.col + colIndent] == undefined) return;
+		
+		var nextToken = board[token.col + colIndent][token.row + rowIndent];
+		var inPotentialList;
+		
+		// Found a match
+		if (nextToken != undefined){
+			if(nextToken.type == token.type){
+			
+				// Add to match lists and continue
+				tempMatchLists.push(nextToken);
+				traceAndAddToPotentialList(tempMatchLists, nextToken, rowIndent, colIndent, added);
+				
+			// Found a two pair (o o), add token at the head (x o o) and tail (o o x) to potential list
+			}else if (tempMatchLists.length > 1){
+			
+				// tail
+				var hintToken = null;
+				
+				// Find left
+				if(colIndent == 0 && board[nextToken.col-1] != undefined){
+					hintToken = board[nextToken.col-1][nextToken.row];
+					if (hintToken.type == token.type){
+						hintList.push(hintToken);
+						hintList.push(nextToken);
+					}
+				}
+				
+				// Find right
+				if(board[nextToken.col+1] != undefined){
+					hintToken = board[nextToken.col+1][nextToken.row];
+					if (hintToken.type == token.type){
+						hintList.push(hintToken);
+						hintList.push(nextToken);
+					}
+				}
+
+				// Find up
+				if(rowIndent == 0 && board[nextToken.col][nextToken.row-1] != undefined){
+					hintToken = board[nextToken.col][nextToken.row-1];
+					if (hintToken.type == token.type){
+						hintList.push(hintToken);
+						hintList.push(nextToken);
+					}
+				}
+				
+				// Find down
+				if(board[nextToken.col][nextToken.row+1] != undefined){
+					hintToken = board[nextToken.col][nextToken.row+1];
+					if (hintToken.type == token.type){
+						hintList.push(hintToken);
+						hintList.push(nextToken);
+					}
+				}
+				
+				//--------------------
+				// head
+				if(rowIndent == 1){
+					nextToken = board[nextToken.col][nextToken.row-3];
+				} else if (colIndent == 1){
+					if(board[nextToken.col-3] != undefined){
+						nextToken = board[nextToken.col-3][nextToken.row];
+					}else{
+						nextToken = undefined;
+					}
+				}
+
+				if(nextToken != undefined){
+					// Find left
+					if(board[nextToken.col-1] != undefined){
+						hintToken = board[nextToken.col-1][nextToken.row];
+						if (hintToken.type == token.type){
+							hintList.push(hintToken);
+							hintList.push(nextToken);
+						}
+					}
+					
+					// Find right
+					if(colIndent == 0 && board[nextToken.col+1] != undefined){
+						hintToken = board[nextToken.col+1][nextToken.row];
+						if (hintToken.type == token.type){
+							hintList.push(hintToken);
+							hintList.push(nextToken);
+						}
+					}
+
+					// Find up
+					if(board[nextToken.col][nextToken.row-1] != undefined){
+						hintToken = board[nextToken.col][nextToken.row-1];
+						if (hintToken.type == token.type){
+							hintList.push(hintToken);
+							hintList.push(nextToken);
+						}
+					}
+					
+					// Find down
+					if(rowIndent == 0 && board[nextToken.col][nextToken.row+1] != undefined){
+						hintToken = board[nextToken.col][nextToken.row+1];
+						if (hintToken.type == token.type){
+							hintList.push(hintToken);
+							hintList.push(nextToken);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	return hintList;
 }

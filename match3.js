@@ -248,7 +248,7 @@ function main(){
 	toggleClickEvent(true);
 	
 	// TODO: Include dragging event
-	//gameCanvas.addEventListener("mousemove", dragToken, false);
+	gameCanvas.addEventListener("mousemove", onMouseMove, false);
 	
 	gameCanvas.addEventListener("keydown", hint, false);
 	
@@ -284,11 +284,14 @@ function draw(){
 	context.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
 	
 	// drawing the gridline
+	context.strokeStyle = "lightgray";
 	for(var i = 0; i < TOKEN_PER_COL; i++){
 		for(var j = 0; j < TOKEN_PER_ROW; j++){
-			context.strokeRect(board[i][j].x, board[i][j].y, TOKEN_SIZE+SPACE, TOKEN_SIZE+SPACE);
+			context.strokeRect(board[i][j].col*(TOKEN_SIZE + SPACE), 
+							   board[i][j].row*(TOKEN_SIZE + SPACE), TOKEN_SIZE+SPACE, TOKEN_SIZE+SPACE);
 		}
 	}
+	context.strokeStyle = "black";
 	
 	// draw each Token
 	for(var i = 0; i < TOKEN_PER_COL; i++){
@@ -301,7 +304,7 @@ function draw(){
 }
 
 // Return the row and col of the selected token.
-// To be used by selectToken(), dragToken()
+// To be used by selectToken(), onMouseMove()
 // e: mouseEvent
 function getCell(e){
 
@@ -361,32 +364,38 @@ function selectToken(e){
 // TODO: Find the selected Token by dragging
 var firstDraggedToken = null;
 var lastDraggedToken = null;
-function dragToken(e){
-	console.log(e.buttons);
+function onMouseMove(e){
+	var hoverCell = getCell(e);
 	
+	// Drag
 	if(e.buttons){
-		var selectedCell = getCell(e);
-		if(firstDraggedToken == null || !firstDraggedToken.isOnTheSameCellWith(selectedCell)){	
+		/*if(firstDraggedToken == null || !firstDraggedToken.isOnTheSameCellWith(hoverCell)){	
 			if (isSelectingFirst) {
-				firstDraggedToken = board[selectedCell.col][selectedCell.row];
+				firstDraggedToken = board[hoverCell.col][hoverCell.row];
 				firstDraggedToken.selected = true;
 			} else {
 				firstDraggedToken.selected = false;
-				lastDraggedToken = board[selectedCell.col][selectedCell.row];
+				lastDraggedToken = board[hoverCell.col][hoverCell.row];
 				
 				if (lastDraggedToken.isAdjacentTo(firstDraggedToken)) {
 					swap(firstDraggedToken, lastDraggedToken);
 					firstDraggedToken = null;
 					// Find a way to force mouseup
 				} else {
-					firstDraggedToken = board[selectedCell.col][selectedCell.row];
+					firstDraggedToken = board[hoverCell.col][hoverCell.row];
 					firstDraggedToken.selected = true;
 					isSelectingFirst = !isSelectingFirst;
 				}
 			}
 			isSelectingFirst = !isSelectingFirst;
-		}
+		}*/
+	
+	// Hover
+	} else{
+		//board[hoverCell.col][hoverCell.row].selected=true;
 	}
+	
+	
 }
 
 // Swap token a and b
@@ -621,7 +630,7 @@ function hint(e){
 	var hintList = getHintList();
 	
 	if (hintList.length == 0){
-		console.log("No Match found SCRAMBLEEEEEEEEEEEEEEEEEEEEEE");
+		scamble(checkMatches);
 	}
 	
 	console.log("================Check Hint===================");
@@ -731,4 +740,11 @@ function getHintList(){
 	}
 	
 	return hintList;
+}
+
+// Rearrange the board
+function scamble(callback){
+	console.log("No Match found SCRAMBLEEEEEEEEEEEEEEEEEEEEEE");
+	
+	//if (typeof(callback) == 'function') callback();
 }

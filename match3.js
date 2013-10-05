@@ -9,8 +9,8 @@
 
 var TOKEN_SIZE = 50;
 var SPACE = 10;
-var TOKEN_PER_ROW = 8;
-var TOKEN_PER_COL = 8;
+var TOKEN_PER_ROW = 6;//8;
+var TOKEN_PER_COL = 6;//8;
 var BOARD_WIDTH = (TOKEN_SIZE + SPACE) * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
 var BOARD_HEIGHT = (TOKEN_SIZE + SPACE) * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
 var TOTAL_FRAME = 30;
@@ -213,7 +213,7 @@ Array.prototype.addToken = function(token){
 	for(;i < this.length;i++){
 		if(token.row < this[i].row){
 			break;
-		}		
+		}
 	}
 	this.splice(i,0,token);
 	
@@ -535,7 +535,7 @@ function dropDown(matchLists){
 	for(var i = 0; i < matches.length; i++){
 		if(matches[i] == undefined) continue;
 		
-		var currentRow = board[i].length - 1;
+		var currentRow = TOKEN_PER_ROW - 1;
 		var currentMatchIndex = matches[i].length - 1;
 		var currentBlankRow = matches[i][currentMatchIndex].row;
 		var token = null;
@@ -618,80 +618,80 @@ function moveToken(token, startX, startY, endX, endY, callback){
 
 // Find all possible matches
 function hint(e){
+	var hintList = getHintList();
+	
+	if (hintList.length == 0){
+		console.log("No Match found SCRAMBLEEEEEEEEEEEEEEEEEEEEEE");
+	}
+	
+	console.log("================Check Hint===================");
+	for(var i = 0; i < hintList.length; i++){
+		for(var j = 0; j<hintList[i].length; j++){
+			hintList[i][j].selected = true;
+			console.log(hintList[i][j]);
+		}
+		console.log("---");
+	}
+}
+
+// TODO: remove duplicate in hintList
+// Find all possible matches [[pair1, pair1], [pair2, pair2]...]
+function getHintList(){
 	var hintList = [];
 
 	var current = null;
 	for(var i = 0; i < TOKEN_PER_COL; i++){
 		for(var j = 0; j < TOKEN_PER_ROW; j++){
 			current = board[i][j];
-			traceAndAddToPotentialList([current], current, 0, 1, false); // down
-			traceAndAddToPotentialList([current], current, 1, 0, false); // right
+			traceAndAddToPotentialList([current], current, 1, 0, current.type); // down
+			traceAndAddToPotentialList([current], current, 0, 1, current.type); // right
 		}
 	}
 	
-	console.log("================Check Hint===================");
-	for(i = 0; i < hintList.length; i++){
-		hintList[i].selected = true;
-		console.log("ok: " + hintList[i]);
-	}
-	
-	function traceAndAddToPotentialList(tempMatchLists, token, rowIndent, colIndent, added){
+	function traceAndAddToPotentialList(tempMatchLists, token, rowIndent, colIndent, type){
 
-		// prevent out of bound
-		if(board[token.col + colIndent] == undefined) return;
-		
-		var nextToken = board[token.col + colIndent][token.row + rowIndent];
+		var nextToken = undefined;
 		var inPotentialList;
 		
-		// Found a match
+		// Is next token out of bound?
+		if(board[token.col + colIndent] != undefined){
+			nextToken = board[token.col + colIndent][token.row + rowIndent];
+		}
+		
+		console.log(token + "Evaluating: " + nextToken + " ....." + tempMatchLists);
 		if (nextToken != undefined){
-			if(nextToken.type == token.type){
+			// Found a match
+			if(nextToken.type == type){
 			
 				// Add to match lists and continue
 				tempMatchLists.push(nextToken);
-				traceAndAddToPotentialList(tempMatchLists, nextToken, rowIndent, colIndent, added);
+				traceAndAddToPotentialList(tempMatchLists, nextToken, rowIndent, colIndent, token.type);
 				
 			// Found a two pair (o o), add token at the head (x o o) and tail (o o x) to potential list
 			}else if (tempMatchLists.length > 1){
 			
 				// tail
-				var hintToken = null;
+				evaluateNeighbors(nextToken, rowIndent == 0, true, colIndent == 0, true);
 				
-				// Find left
+				/*// left
 				if(colIndent == 0 && board[nextToken.col-1] != undefined){
-					hintToken = board[nextToken.col-1][nextToken.row];
-					if (hintToken.type == token.type){
-						hintList.push(hintToken);
-						hintList.push(nextToken);
-					}
+					addTokenToHintList(board[nextToken.col-1][nextToken.row], nextToken);
 				}
 				
-				// Find right
+				// right
 				if(board[nextToken.col+1] != undefined){
-					hintToken = board[nextToken.col+1][nextToken.row];
-					if (hintToken.type == token.type){
-						hintList.push(hintToken);
-						hintList.push(nextToken);
-					}
+					addTokenToHintList(board[nextToken.col+1][nextToken.row], nextToken);
 				}
 
-				// Find up
+				// up
 				if(rowIndent == 0 && board[nextToken.col][nextToken.row-1] != undefined){
-					hintToken = board[nextToken.col][nextToken.row-1];
-					if (hintToken.type == token.type){
-						hintList.push(hintToken);
-						hintList.push(nextToken);
-					}
+					addTokenToHintList(board[nextToken.col][nextToken.row-1], nextToken);
 				}
 				
-				// Find down
+				// down
 				if(board[nextToken.col][nextToken.row+1] != undefined){
-					hintToken = board[nextToken.col][nextToken.row+1];
-					if (hintToken.type == token.type){
-						hintList.push(hintToken);
-						hintList.push(nextToken);
-					}
-				}
+					addTokenToHintList(board[nextToken.col][nextToken.row+1], nextToken);
+				}*/
 				
 				//--------------------
 				// head
@@ -704,44 +704,102 @@ function hint(e){
 						nextToken = undefined;
 					}
 				}
+				
+				evaluateNeighbors(nextToken, true, rowIndent == 0, true, colIndent == 0);
 
-				if(nextToken != undefined){
-					// Find left
+				/*if(nextToken != undefined){
+					// left
 					if(board[nextToken.col-1] != undefined){
-						hintToken = board[nextToken.col-1][nextToken.row];
-						if (hintToken.type == token.type){
-							hintList.push(hintToken);
-							hintList.push(nextToken);
-						}
+						addTokenToHintList(board[nextToken.col-1][nextToken.row], nextToken);
 					}
 					
-					// Find right
+					// right
 					if(colIndent == 0 && board[nextToken.col+1] != undefined){
-						hintToken = board[nextToken.col+1][nextToken.row];
-						if (hintToken.type == token.type){
-							hintList.push(hintToken);
-							hintList.push(nextToken);
-						}
+						addTokenToHintList(board[nextToken.col+1][nextToken.row], nextToken);
 					}
 
-					// Find up
+					// up
 					if(board[nextToken.col][nextToken.row-1] != undefined){
-						hintToken = board[nextToken.col][nextToken.row-1];
-						if (hintToken.type == token.type){
-							hintList.push(hintToken);
-							hintList.push(nextToken);
-						}
+						addTokenToHintList(board[nextToken.col][nextToken.row-1], nextToken);
 					}
 					
-					// Find down
+					// down
 					if(rowIndent == 0 && board[nextToken.col][nextToken.row+1] != undefined){
-						hintToken = board[nextToken.col][nextToken.row+1];
-						if (hintToken.type == token.type){
-							hintList.push(hintToken);
-							hintList.push(nextToken);
-						}
+						addTokenToHintList(board[nextToken.col][nextToken.row+1], nextToken);
 					}
+				}*/
+				
+			// Search for middle potential token (o x o)
+			} else if (tempMatchLists.length == 1){
+				if(board[nextToken.col + colIndent] == undefined) return;
+		
+				var nextnextToken = board[nextToken.col + colIndent][nextToken.row + rowIndent];
+				if(nextnextToken != undefined && nextnextToken.type == type){
+				
+					evaluateNeighbors(nextToken, colIndent == 1, colIndent == 1, rowIndent == 1, rowIndent == 1);
+					
+					/*// Search left, right
+					if(rowIndent == 1){
+						if(board[nextToken.col-1] != undefined){
+							addTokenToHintList(board[nextToken.col-1][nextToken.row], nextToken);
+						}
+						if(board[nextToken.col+1] != undefined){
+							addTokenToHintList(board[nextToken.col+1][nextToken.row], nextToken);
+						}
+					
+					// Search up, down
+					}else if(colIndent == 1){
+						if(board[nextToken.col][nextToken.row-1] != undefined){
+							addTokenToHintList(board[nextToken.col][nextToken.row-1], nextToken);
+						}
+						
+						if(rowIndent == 0 && board[nextToken.col][nextToken.row+1] != undefined){
+							addTokenToHintList(board[nextToken.col][nextToken.row+1], nextToken);
+						}
+					}*/
 				}
+			}
+		
+		//}/*// tail is undefined, look for head
+		} else if (tempMatchLists.length > 1){
+			console.log("current: " + token + "   row" + rowIndent + " col" + colIndent);
+			if(rowIndent == 1){
+				nextToken = board[token.col][token.row-2];
+			} else if (colIndent == 1){
+				if(board[token.col-2] != undefined){
+					nextToken = board[token.col-2][token.row];
+				}else{
+					nextToken = undefined;
+				}
+			}
+			
+			evaluateNeighbors(nextToken, true, rowIndent == 0, true, colIndent == 0);			
+		}
+		
+		function evaluateNeighbors(hintToken, searchUp, searchDown, searchLeft, searchRight){
+			if(hintToken == undefined) return;
+			
+			if(searchUp && board[hintToken.col][hintToken.row-1] != undefined){
+				addTokenToHintList(board[hintToken.col][hintToken.row-1], hintToken);
+			}
+			
+			if(searchDown && board[hintToken.col][hintToken.row+1] != undefined){
+				addTokenToHintList(board[hintToken.col][hintToken.row+1], hintToken);
+			}
+			
+			if(searchLeft && board[hintToken.col-1] != undefined){
+				addTokenToHintList(board[hintToken.col-1][hintToken.row], hintToken);
+			}
+			
+			if(searchRight && board[hintToken.col+1] != undefined){
+				addTokenToHintList(board[hintToken.col+1][hintToken.row], hintToken);
+			}
+		}
+		
+		function addTokenToHintList(hintToken, tokenToSwap){
+			if (hintToken.type == type){
+				console.log("atari");
+				hintList.push([tokenToSwap, hintToken]);
 			}
 		}
 	}

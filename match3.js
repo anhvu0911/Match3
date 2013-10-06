@@ -42,6 +42,7 @@ function Token(col, row){
 	this.col = col;
 	this.type = NULL_TOKEN;
 	this.selected = false;
+	this.img = "";
 	this.calculateXY = function(){
 		this.x = this.col*(TOKEN_SIZE + SPACE);
 		this.y = this.row*(TOKEN_SIZE + SPACE);

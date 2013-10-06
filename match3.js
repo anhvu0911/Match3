@@ -24,6 +24,7 @@ var BLUE = 4;
 var MAGENTA = 5;
 var PURPLE = 6;
 var IMAGE_SET = "images/elemental/";
+// var IMAGE_SET = "images/browsers/";
 
 var requestAnimationFrame;
 var gameCanvas;
@@ -62,12 +63,12 @@ function Token(col, row){
 		context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
 		
 		
-		/*context.fillRect(this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
+		// context.fillRect(this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
 		
 		//Debugging info
-		context.fillStyle = "black";
-		context.font = "15pt Aria";
-		context.fillText(this.row + "," + this.col, this.x + 10, this.y+20);*/
+		// context.fillStyle = "black";
+		// context.font = "15pt Aria";
+		// context.fillText(this.row + "," + this.col, this.x + 10, this.y+20);
 	}
 	this.toString = function(){
 		return "[" + this.type + "]" + this.row + "-" + this.col + "(" + this.x + "," + this.y + ")";
@@ -296,6 +297,10 @@ function draw(){
 	// Don't use context.clearRect(0, 0, gameCanvas.width, gameCanvas.height); // Performance hack
 	gameCanvas.width = gameCanvas.width;
 	
+	context.shadowOffsetX = 0;
+	context.shadowOffsetY = 0;
+	context.shadowColor = "gray";
+	
 	// drawing the gridline
 	context.strokeStyle = "lightgray";
 	for(var i = 0; i < TOKEN_PER_COL; i++){
@@ -306,14 +311,15 @@ function draw(){
 	}
 	context.strokeStyle = "black";
 	
-	// Don't use context.shadowBlur // greatly degrade performance
-	context.shadowOffsetX = 4;
-	context.shadowOffsetY = 4;
-	context.shadowColor = "black";
+	// Don't use context.shadowBlur // greatly degrade performance	
+	// context.shadowOffsetX = 3;
+	context.shadowOffsetY = 6;
 	
 	// draw each Token
 	for(var i = 0; i < TOKEN_PER_COL; i++){
+		context.shadowOffsetX = 2*(i-3.5);
 		for(var j = 0; j < TOKEN_PER_ROW; j++){
+			// context.shadowOffsetY = 3*(j-3.5);
 			board[i][j].draw();	
 		}
 	}

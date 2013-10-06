@@ -23,6 +23,7 @@ var GREEN = 3;
 var BLUE = 4;
 var MAGENTA = 5;
 var PURPLE = 6;
+var IMAGE_SET = "images/elemental/";
 
 var requestAnimationFrame;
 var gameCanvas;
@@ -42,7 +43,7 @@ function Token(col, row){
 	this.col = col;
 	this.type = NULL_TOKEN;
 	this.selected = false;
-	this.img = "";
+	this.img = new Image();
 	this.calculateXY = function(){
 		this.x = this.col*(TOKEN_SIZE + SPACE);
 		this.y = this.row*(TOKEN_SIZE + SPACE);
@@ -58,12 +59,15 @@ function Token(col, row){
 		if(this.selected){
 			context.strokeRect(this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE, TOKEN_SIZE);
 		}
-		context.fillRect(this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
+		context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
+		
+		
+		/*context.fillRect(this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
 		
 		//Debugging info
 		context.fillStyle = "black";
 		context.font = "15pt Aria";
-		context.fillText(this.row + "," + this.col, this.x + 10, this.y+20);
+		context.fillText(this.row + "," + this.col, this.x + 10, this.y+20);*/
 	}
 	this.toString = function(){
 		return "[" + this.type + "]" + this.row + "-" + this.col + "(" + this.x + "," + this.y + ")";
@@ -96,8 +100,9 @@ function Token(col, row){
 function Red(col, row){
 	Token.call(this, col, row);
 	this.type = RED;
+	this.img.src = IMAGE_SET + "red.png";
 	this.draw = function(){
-		context.fillStyle = "red";
+		//context.fillStyle = "red";
 		Red.prototype.draw.call(this);
 	}
 }
@@ -107,8 +112,9 @@ Red.prototype.constructor = Red;
 function Orange(col, row){
 	Token.call(this, col, row);
 	this.type = ORANGE;
+	this.img.src = IMAGE_SET + "orange.png";
 	this.draw = function(){
-		context.fillStyle = "orange";
+		//context.fillStyle = "orange";
 		Orange.prototype.draw.call(this);
 	}
 }
@@ -118,8 +124,9 @@ Orange.prototype.constructor = Orange;
 function Yellow(col, row){
 	Token.call(this, col, row);
 	this.type = YELLOW;
+	this.img.src = IMAGE_SET + "yellow.png";
 	this.draw = function(){
-		context.fillStyle = "yellow";
+		//context.fillStyle = "yellow";
 		Yellow.prototype.draw.call(this);
 	}
 }
@@ -129,8 +136,9 @@ Yellow.prototype.constructor = Yellow;
 function Green(col, row){
 	Token.call(this, col, row);
 	this.type = GREEN;
+	this.img.src = IMAGE_SET + "green.png";
 	this.draw = function(){
-		context.fillStyle = "green";
+		//context.fillStyle = "green";
 		Green.prototype.draw.call(this);
 	}
 }
@@ -140,8 +148,9 @@ Green.prototype.constructor = Green;
 function Blue(col, row){
 	Token.call(this, col, row);
 	this.type = BLUE;
+	this.img.src = IMAGE_SET + "blue.png";
 	this.draw = function(){
-		context.fillStyle = "blue";
+		//context.fillStyle = "blue";
 		Blue.prototype.draw.call(this);
 	}
 }
@@ -151,8 +160,9 @@ Blue.prototype.constructor = Blue;
 function Magenta(col, row){
 	Token.call(this, col, row);
 	this.type = MAGENTA;
+	this.img.src = IMAGE_SET + "magenta.png";
 	this.draw = function(){
-		context.fillStyle = "magenta";
+		//context.fillStyle = "magenta";
 		Magenta.prototype.draw.call(this);
 	}
 }
@@ -162,8 +172,9 @@ Magenta.prototype.constructor = Magenta;
 function Purple(col, row){
 	Token.call(this, col, row);
 	this.type = PURPLE;
+	this.img.src = IMAGE_SET + "purple.png";
 	this.draw = function(){
-		context.fillStyle = "purple";
+		//context.fillStyle = "purple";
 		Purple.prototype.draw.call(this);
 	}
 }
@@ -282,7 +293,8 @@ function createToken(col, row){
 
 // Draw the board, tokens
 function draw(){
-	context.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+	// Don't use context.clearRect(0, 0, gameCanvas.width, gameCanvas.height); // Performance hack
+	gameCanvas.width = gameCanvas.width;
 	
 	// drawing the gridline
 	context.strokeStyle = "lightgray";
@@ -293,6 +305,11 @@ function draw(){
 		}
 	}
 	context.strokeStyle = "black";
+	
+	// Don't use context.shadowBlur // greatly degrade performance
+	context.shadowOffsetX = 4;
+	context.shadowOffsetY = 4;
+	context.shadowColor = "black";
 	
 	// draw each Token
 	for(var i = 0; i < TOKEN_PER_COL; i++){

@@ -13,7 +13,7 @@ var TOKEN_PER_ROW = 8;
 var TOKEN_PER_COL = 8;
 var BOARD_WIDTH = (TOKEN_SIZE + SPACE) * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
 var BOARD_HEIGHT = (TOKEN_SIZE + SPACE) * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
-var TOTAL_FRAME = 30;
+var TOTAL_FRAME = 20;
 
 var NULL_TOKEN = -1;
 var RED = 0;
@@ -23,8 +23,9 @@ var GREEN = 3;
 var BLUE = 4;
 var MAGENTA = 5;
 var PURPLE = 6;
-var IMAGE_SET = "images/elemental/";
+// var IMAGE_SET = "images/elemental/";
 // var IMAGE_SET = "images/browsers/";
+var IMAGE_SET = "images/token/";
 
 var requestAnimationFrame;
 var gameCanvas;
@@ -58,6 +59,7 @@ function Token(col, row){
 	}
 	this.draw = function(){
 		if(this.selected){
+			context.strokeStyle = "lightgray";
 			context.strokeRect(this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE, TOKEN_SIZE);
 		}
 		context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
@@ -297,29 +299,31 @@ function draw(){
 	// Don't use context.clearRect(0, 0, gameCanvas.width, gameCanvas.height); // Performance hack
 	gameCanvas.width = gameCanvas.width;
 	
-	context.shadowOffsetX = 0;
-	context.shadowOffsetY = 0;
-	context.shadowColor = "gray";
-	
-	// drawing the gridline
-	context.strokeStyle = "lightgray";
+	// filling the board, loop two times because changing canvas state in loop costs performance	
+	context.fillStyle = "#222";
+	// context.fillStyle = "rgba(255, 255, 255, 0.5)";
 	for(var i = 0; i < TOKEN_PER_COL; i++){
 		for(var j = 0; j < TOKEN_PER_ROW; j++){
-			context.strokeRect(board[i][j].col*(TOKEN_SIZE + SPACE), 
+			if((i+j) % 2 != 0){
+				context.fillRect(board[i][j].col*(TOKEN_SIZE + SPACE), 
 							   board[i][j].row*(TOKEN_SIZE + SPACE), TOKEN_SIZE+SPACE, TOKEN_SIZE+SPACE);
+			}
 		}
 	}
-	context.strokeStyle = "black";
 	
-	// Don't use context.shadowBlur // greatly degrade performance	
-	// context.shadowOffsetX = 3;
-	context.shadowOffsetY = 6;
+	context.fillStyle = "#111";
+	for(var i = 0; i < TOKEN_PER_COL; i++){
+		for(var j = 0; j < TOKEN_PER_ROW; j++){
+			if((i+j) % 2 == 0){
+				context.fillRect(board[i][j].col*(TOKEN_SIZE + SPACE), 
+							   board[i][j].row*(TOKEN_SIZE + SPACE), TOKEN_SIZE+SPACE, TOKEN_SIZE+SPACE);
+			}
+		}
+	}
 	
 	// draw each Token
 	for(var i = 0; i < TOKEN_PER_COL; i++){
-		context.shadowOffsetX = 2*(i-3.5);
 		for(var j = 0; j < TOKEN_PER_ROW; j++){
-			// context.shadowOffsetY = 3*(j-3.5);
 			board[i][j].draw();	
 		}
 	}

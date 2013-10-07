@@ -109,20 +109,6 @@ function Token(col, row, type, img){
 // OVERRIDE METHOD
 // =============================================
 
-// Return a list of common elements from two arrays
-Array.prototype.intersect = function(array){
-	var newArray = [];
-	for(var i = 0; i < this.length; i++){
-		newArray.push(this[i]);
-	}
-	for(var i = 0; i < array.length; i++){
-		if(newArray.indexOf(array[i]) > 0){
-			newArray.push(array[i]);
-		}
-	}
-	return newArray;
-}
-
 // If it intersect, return true!
 Array.prototype.hasCommonElement = function(array){
 	for(var i = 0; i < array.length; i++){
@@ -411,14 +397,6 @@ function findMatches(){
 			}	
 		}
 	}
-	
-	/*console.log("================Check Match===================");
-	for(i = 0; i < matchLists.length; i++){
-		for(j = 0; j < matchLists[i].length; j++){
-			console.log(matchLists[i][j]);		
-		}				
-		console.log("-----");
-	}*/
 
 	// Starting on a token, trace similar tokens
 	// matchLists: a list of all matches
@@ -437,13 +415,9 @@ function findMatches(){
 		if(nextToken != undefined && nextToken.type == token.type){
 		
 			// Check if that match exist, if yes, no need to create new matchlist
-			inMatchlist = false;
-			for(var i = 0; i < matchLists.length; i++){
-				// Include token and nextToke check to allow a list of >3 tokens
-				if(matchLists[i].indexOf(token) > 0 && matchLists[i].indexOf(nextToken) > 0){
-					inMatchlist = true;
-				}
-			}
+			inMatchlist = matchLists.some(function(match){
+				return match.indexOf(token) > 0 && match.indexOf(nextToken) > 0;
+			});
 			
 			// If not, add to the match list
 			if(!inMatchlist){
@@ -471,20 +445,19 @@ function explode(matchLists){
 // TODO: Make animation of dropping
 // Temp: Replace with above appropriate tokens
 function dropDown(matchLists){
+
 	// Merge all matches into An array of array
 	// each is a token with same column, sort row from low to high
 	var matches = [];
-	for(var i = 0; i < matchLists.length; i++){		
-		for(var j = 0; j < matchLists[i].length; j++){
-			var token = matchLists[i][j];
-			
+	matchLists.forEach(function(match){
+		match.forEach(function(token){
 			if(matches[token.col] == undefined){
 				matches[token.col] = [];
 			}
 			
 			matches[token.col].addToken(token);
-		}
-	}
+		});
+	});
 	
 	// Start shift board[column] based on matches
 	for(var i = 0; i < matches.length; i++){

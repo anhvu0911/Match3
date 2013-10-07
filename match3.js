@@ -9,10 +9,11 @@
 
 var TOKEN_SIZE = 50;
 var SPACE = 10;
+var CELL_SIZE = TOKEN_SIZE + SPACE;
 var TOKEN_PER_ROW = 8;
 var TOKEN_PER_COL = 8;
-var BOARD_WIDTH = (TOKEN_SIZE + SPACE) * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
-var BOARD_HEIGHT = (TOKEN_SIZE + SPACE) * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
+var BOARD_WIDTH = CELL_SIZE * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
+var BOARD_HEIGHT = CELL_SIZE * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
 var TOTAL_FRAME = 30;
 var IMAGE_SET = "images/elemental/";
 // var IMAGE_SET = "images/browsers/";
@@ -37,6 +38,9 @@ var gameCanvas;
 var context;
 var board = [];
 
+// Image resource
+var slashImg;
+
 function Cell(col, row){
 	this.col = col;
 	this.row = row;
@@ -55,8 +59,8 @@ function Token(col, row, type, img){
 	this.img.src = IMAGE_SET + img;
 	
 	this.calculateXY = function(){
-		this.x = this.col*(TOKEN_SIZE + SPACE);
-		this.y = this.row*(TOKEN_SIZE + SPACE);
+		this.x = this.col*CELL_SIZE;
+		this.y = this.row*CELL_SIZE;
 	}
 	this.isOnTheSameCellWith = function(token){
 		return (this.row == token.row) && (this.col == token.col);
@@ -148,6 +152,8 @@ Array.prototype.addToken = function(token){
 function main(){
 	gameCanvas = document.getElementById("gameCanvas");
 	context = gameCanvas.getContext("2d");
+	
+	slashImg = document.getElementById("slash");
 
 	requestAnimationFrame = window.requestAnimationFrame ||
         window.webkitRequestAnimationFrame ||
@@ -189,7 +195,7 @@ function toggleClickEvent(on){
 
 // Factory method, create random Token for col, row
 function createToken(col, row){
-	switch(parseInt(Math.random()*7)){
+	switch(parseInt(Math.random()*3)){
 		case RED:	 return new Token(col, row, RED, "red.png");
 		case ORANGE: return new Token(col, row, ORANGE,"orange.png");
 		case YELLOW: return new Token(col, row, YELLOW,"yellow.png");
@@ -210,8 +216,7 @@ function draw(){
 	board.forEach(function(boardCol, i){
 		boardCol.forEach(function (token, j){
 			if((i+j) % 2 != 0){
-				context.fillRect(token.col*(TOKEN_SIZE + SPACE), token.row*(TOKEN_SIZE + SPACE), 
-						TOKEN_SIZE+SPACE, TOKEN_SIZE+SPACE);
+				context.fillRect(token.col*CELL_SIZE, token.row*CELL_SIZE, CELL_SIZE, CELL_SIZE);
 			}
 		});
 	});
@@ -220,8 +225,7 @@ function draw(){
 	board.forEach(function(boardCol, i){
 		boardCol.forEach(function (token, j){
 			if((i+j) % 2 == 0){
-				context.fillRect(token.col*(TOKEN_SIZE + SPACE), token.row*(TOKEN_SIZE + SPACE), 
-						TOKEN_SIZE+SPACE, TOKEN_SIZE+SPACE);
+				context.fillRect(token.col*CELL_SIZE, token.row*CELL_SIZE, CELL_SIZE, CELL_SIZE);
 			}
 		});
 	});
@@ -385,18 +389,6 @@ function findMatches(){
 			traceAndAddToMatchList([token], token, 1, 0, false); // right
 		});
 	});
-	
-	// TODO: Merge this with traceAndAddToMatchList, filter while tracing, OR MAY BE NOT, use for explosion 5- L turn tokens
-	// Merge match lists that have the same tokens
-	for(i = 0; i < matchLists.length - 1; i++){
-		for(j = i+1; j < matchLists.length; j++){
-			if(matchLists[i].hasCommonElement(matchLists[j])){
-				matchLists[i].merge(matchLists[j]);
-				matchLists.splice(j,1);
-				break;
-			}	
-		}
-	}
 
 	// Starting on a token, trace similar tokens
 	// matchLists: a list of all matches
@@ -435,17 +427,103 @@ function findMatches(){
 	return matchLists;
 }
 
+// Merge match lists that have the same tokens
+function deduplicateInMatchList(matchLists){
+	for(i = 0; i < matchLists.length - 1; i++){
+		for(j = i+1; j < matchLists.length; j++){
+			if(matchLists[i].hasCommonElement(matchLists[j])){
+				matchLists[i].merge(matchLists[j]);
+				matchLists.splice(j,1);
+				break;
+			}	
+		}
+	}
+	return matchLists;
+}
+
 // TODO: Animation Explosion effect
 function explode(matchLists){
 	console.log("explode");
 	
-	dropDown(matchLists);
+	matchLists.forEach(function(match){
+	
+		// horizontal slash
+		if (match[0].row == match[1].row){
+			slash(match[0].x - CELL_SIZE/4, match[0].y + CELL_SIZE/2 - slashImg.height/2,
+				  match[match.length-1].x + CELL_SIZE, match[match.length-1].y + CELL_SIZE/2 - slashImg.height/2);
+				  
+		// vertical slash
+		} else {
+			slash(match[0].x + CELL_SIZE/2 + slashImg.height/2, match[0].y - CELL_SIZE/4,
+				  match[match.length-1].x + CELL_SIZE/2 + slashImg.height/2, match[match.length-1].y + CELL_SIZE, Math.PI/2);
+		}
+	});
+	
+	function slash(startX, startY, endX, endY, rotate){
+		var frame = 0;
+		var total_frame = 21;
+		var slashSectionLength = Math.round(total_frame/2);
+		
+		var deltaWidth = ((endX - startX) + (endY - startY)) / slashSectionLength;
+		var width = deltaWidth;
+		var height = slashImg.height;
+		
+		if (rotate != undefined) {
+			drawVerticalSlash();
+		}else{
+			drawHorizontalSlash();
+		}
+		
+		function drawHorizontalSlash(){
+			context.drawImage(slashImg, startX, startY, width, height);
+		
+			frame++;
+			width += (frame <= slashSectionLength) ? deltaWidth : -deltaWidth;
+			startX += (frame <= slashSectionLength) ? 0 : deltaWidth;
+			
+			// Finish?
+			if (frame < total_frame){
+				requestAnimationFrame(drawHorizontalSlash);
+			} else {
+				console.log("done");
+				
+				// if (typeof(callback) == 'function'){
+					// callback();
+				// }
+			}
+		};
+		
+		function drawVerticalSlash(){
+			context.translate(startX, startY);
+			context.rotate(rotate);
+			context.drawImage(slashImg, 0, 0, width, height);
+			context.rotate(-rotate);
+			context.translate(-startX, -startY);
+		
+			frame++;
+			width += (frame <= slashSectionLength) ? deltaWidth : -deltaWidth;
+			startY += (frame <= slashSectionLength) ? 0 : deltaWidth;
+			
+			// Finish?
+			if (frame < total_frame){
+				requestAnimationFrame(drawVerticalSlash);
+			} else {
+				console.log("done");
+				
+				// if (typeof(callback) == 'function'){
+					// callback();
+				// }
+			}
+		};
+	}
+	
+	
+	dropDown(deduplicateInMatchList(matchLists));
 }
 
 // TODO: Make animation of dropping
 // Temp: Replace with above appropriate tokens
 function dropDown(matchLists){
-
 	// Merge all matches into An array of array
 	// each is a token with same column, sort row from low to high
 	var matches = [];
@@ -476,7 +554,7 @@ function dropDown(matchLists){
 			// Else, drop the above tokens to fill the blank
 			}else if (currentRow < currentBlankRow && currentRow >= 0){				
 				token = board[i][currentRow];
-				moveToken(token, token.x, token.y, token.x, token.y + (currentBlankRow - currentRow)*(TOKEN_SIZE + SPACE));
+				moveToken(token, token.x, token.y, token.x, token.y + (currentBlankRow - currentRow)*CELL_SIZE);
 				
 				board[i][currentBlankRow] = token;
 				token.row = currentBlankRow;
@@ -487,7 +565,7 @@ function dropDown(matchLists){
 			// Move all stock tokens? fill columns with new tokens
 			if (currentRow < 0){				
 				token = createToken(i, currentBlankRow);
-				moveToken(token, token.x, token.y - matches[i].length*(TOKEN_SIZE + SPACE), token.x, token.y);
+				moveToken(token, token.x, token.y - matches[i].length*CELL_SIZE, token.x, token.y);
 				board[i][currentBlankRow] = token;
 				currentBlankRow--;
 			}

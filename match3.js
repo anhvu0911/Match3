@@ -13,18 +13,24 @@ var TOKEN_PER_ROW = 8;
 var TOKEN_PER_COL = 8;
 var BOARD_WIDTH = (TOKEN_SIZE + SPACE) * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
 var BOARD_HEIGHT = (TOKEN_SIZE + SPACE) * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
-var TOTAL_FRAME = 24;
-
-var NULL_TOKEN = -1;
-var RED = 0;
-var ORANGE = 1;
-var YELLOW = 2;
-var GREEN = 3;
-var BLUE = 4;
-var MAGENTA = 5;
-var PURPLE = 6;
+var TOTAL_FRAME = 30;
 var IMAGE_SET = "images/elemental/";
 // var IMAGE_SET = "images/browsers/";
+
+// 7 Token types
+var RED = 1;
+var ORANGE = 2;
+var YELLOW = 3;
+var GREEN = 4;
+var BLUE = 5;
+var MAGENTA = 6;
+var PURPLE = 7;
+
+// Token state
+var NORMAL_STATE = 0;
+var HOVER_STATE = 0;
+var SELECT_STATE = 0;
+var EXPLODE_STATE = 0;
 
 var requestAnimationFrame;
 var gameCanvas;
@@ -39,12 +45,15 @@ function Cell(col, row){
 //========================================================
 // 7 TYPES OF TOKEN
 //========================================================
-function Token(col, row){
+function Token(col, row, type, img){
 	this.row = row;
 	this.col = col;
-	this.type = NULL_TOKEN;
+	this.type = type;
 	this.selected = false;
+	this.state = NORMAL_STATE;
 	this.img = new Image();
+	this.img.src = IMAGE_SET + img;
+	
 	this.calculateXY = function(){
 		this.x = this.col*(TOKEN_SIZE + SPACE);
 		this.y = this.row*(TOKEN_SIZE + SPACE);
@@ -62,9 +71,6 @@ function Token(col, row){
 			context.strokeRect(this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE, TOKEN_SIZE);
 		}
 		context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
-		
-		
-		// context.fillRect(this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
 		
 		//Debugging info
 		// context.fillStyle = "black";
@@ -98,90 +104,6 @@ function Token(col, row){
 	
 	this.calculateXY();
 }
-
-function Red(col, row){
-	Token.call(this, col, row);
-	this.type = RED;
-	this.img.src = IMAGE_SET + "red.png";
-	this.draw = function(){
-		//context.fillStyle = "red";
-		Red.prototype.draw.call(this);
-	}
-}
-Red.prototype = new Token();
-Red.prototype.constructor = Red;
-
-function Orange(col, row){
-	Token.call(this, col, row);
-	this.type = ORANGE;
-	this.img.src = IMAGE_SET + "orange.png";
-	this.draw = function(){
-		//context.fillStyle = "orange";
-		Orange.prototype.draw.call(this);
-	}
-}
-Orange.prototype = new Token();
-Orange.prototype.constructor = Orange;
-
-function Yellow(col, row){
-	Token.call(this, col, row);
-	this.type = YELLOW;
-	this.img.src = IMAGE_SET + "yellow.png";
-	this.draw = function(){
-		//context.fillStyle = "yellow";
-		Yellow.prototype.draw.call(this);
-	}
-}
-Yellow.prototype = new Token();
-Yellow.prototype.constructor = Yellow;
-
-function Green(col, row){
-	Token.call(this, col, row);
-	this.type = GREEN;
-	this.img.src = IMAGE_SET + "green.png";
-	this.draw = function(){
-		//context.fillStyle = "green";
-		Green.prototype.draw.call(this);
-	}
-}
-Green.prototype = new Token();
-Green.prototype.constructor = Green;
-
-function Blue(col, row){
-	Token.call(this, col, row);
-	this.type = BLUE;
-	this.img.src = IMAGE_SET + "blue.png";
-	this.draw = function(){
-		//context.fillStyle = "blue";
-		Blue.prototype.draw.call(this);
-	}
-}
-Blue.prototype = new Token();
-Blue.prototype.constructor = Blue;
-
-function Magenta(col, row){
-	Token.call(this, col, row);
-	this.type = MAGENTA;
-	this.img.src = IMAGE_SET + "magenta.png";
-	this.draw = function(){
-		//context.fillStyle = "magenta";
-		Magenta.prototype.draw.call(this);
-	}
-}
-Magenta.prototype = new Token();
-Magenta.prototype.constructor = Magenta;
-
-function Purple(col, row){
-	Token.call(this, col, row);
-	this.type = PURPLE;
-	this.img.src = IMAGE_SET + "purple.png";
-	this.draw = function(){
-		//context.fillStyle = "purple";
-		Purple.prototype.draw.call(this);
-	}
-}
-Purple.prototype = new Token();
-Purple.prototype.constructor = Purple;
 
 // =============================================
 // OVERRIDE METHOD
@@ -282,14 +204,13 @@ function toggleClickEvent(on){
 // Factory method, create random Token for col, row
 function createToken(col, row){
 	switch(parseInt(Math.random()*7)){
-		case RED:	 return new Red(col, row);
-		case ORANGE: return new Orange(col, row);
-		case YELLOW: return new Yellow(col, row);
-		case GREEN:	 return new Green(col, row);
-		case BLUE:	 return new Blue(col, row);
-		case MAGENTA:return new Magenta(col, row);
-		case PURPLE: return new Purple(col, row);
-		default: return new Token(col, row);
+		case RED:	 return new Token(col, row, RED, "red.png");
+		case ORANGE: return new Token(col, row, ORANGE,"orange.png");
+		case YELLOW: return new Token(col, row, YELLOW,"yellow.png");
+		case GREEN:	 return new Token(col, row, GREEN,"green.png");
+		case BLUE:	 return new Token(col, row, BLUE,"blue.png");
+		case MAGENTA:return new Token(col, row, MAGENTA,"magenta.png");
+		default: return new Token(col, row, PURPLE,"purple.png");
 	}
 }
 
@@ -300,32 +221,31 @@ function draw(){
 	
 	// filling the board, loop two times because changing canvas state in loop costs performance	
 	context.fillStyle = "#222";
-	// context.fillStyle = "rgba(255, 255, 255, 0.5)";
-	for(var i = 0; i < TOKEN_PER_COL; i++){
-		for(var j = 0; j < TOKEN_PER_ROW; j++){
+	board.forEach(function(boardCol, i){
+		boardCol.forEach(function (token, j){
 			if((i+j) % 2 != 0){
-				context.fillRect(board[i][j].col*(TOKEN_SIZE + SPACE), 
-							   board[i][j].row*(TOKEN_SIZE + SPACE), TOKEN_SIZE+SPACE, TOKEN_SIZE+SPACE);
+				context.fillRect(token.col*(TOKEN_SIZE + SPACE), token.row*(TOKEN_SIZE + SPACE), 
+						TOKEN_SIZE+SPACE, TOKEN_SIZE+SPACE);
 			}
-		}
-	}
+		});
+	});
 	
 	context.fillStyle = "#111";
-	for(var i = 0; i < TOKEN_PER_COL; i++){
-		for(var j = 0; j < TOKEN_PER_ROW; j++){
+	board.forEach(function(boardCol, i){
+		boardCol.forEach(function (token, j){
 			if((i+j) % 2 == 0){
-				context.fillRect(board[i][j].col*(TOKEN_SIZE + SPACE), 
-							   board[i][j].row*(TOKEN_SIZE + SPACE), TOKEN_SIZE+SPACE, TOKEN_SIZE+SPACE);
+				context.fillRect(token.col*(TOKEN_SIZE + SPACE), token.row*(TOKEN_SIZE + SPACE), 
+						TOKEN_SIZE+SPACE, TOKEN_SIZE+SPACE);
 			}
-		}
-	}
+		});
+	});
 	
 	// draw each Token
-	for(var i = 0; i < TOKEN_PER_COL; i++){
-		for(var j = 0; j < TOKEN_PER_ROW; j++){
-			board[i][j].draw();	
-		}
-	}
+	board.forEach(function(boardCol, i){
+		boardCol.forEach(function (token, j){
+			token.draw();
+		});
+	});
 	
 	requestAnimationFrame(draw);
 }
@@ -472,14 +392,13 @@ function checkMatches(callback){
 // Search the matching pair, using trace algorithm
 function findMatches(){	
 	var matchLists = [];
-	var current = null;
-	for(var i = 0; i < TOKEN_PER_COL; i++){
-		for(var j = 0; j < TOKEN_PER_ROW; j++){
-			current = board[i][j];
-			traceAndAddToMatchList([current], current, 0, 1, false); // down
-			traceAndAddToMatchList([current], current, 1, 0, false); // right
-		}
-	}
+	
+	board.forEach(function(boardCol, i){
+		boardCol.forEach(function (token, j){
+			traceAndAddToMatchList([token], token, 0, 1, false); // down
+			traceAndAddToMatchList([token], token, 1, 0, false); // right
+		});
+	});
 	
 	// TODO: Merge this with traceAndAddToMatchList, filter while tracing, OR MAY BE NOT, use for explosion 5- L turn tokens
 	// Merge match lists that have the same tokens
@@ -668,21 +587,20 @@ function hint(e){
 		}
 		console.log("---");
 	}
+	
 }
 
 // TODO: remove duplicate in hintList
 // Find all possible matches [[pair1, pair1], [pair2, pair2]...]
 function getHintList(){
 	var hintList = [];
-
-	var current = null;
-	for(var i = 0; i < TOKEN_PER_COL; i++){
-		for(var j = 0; j < TOKEN_PER_ROW; j++){
-			current = board[i][j];
-			traceAndAddToPotentialList([current], current, 1, 0, current.type); // down
-			traceAndAddToPotentialList([current], current, 0, 1, current.type); // right
-		}
-	}
+	
+	board.forEach(function(boardCol, i){
+		boardCol.forEach(function (token, j){
+			traceAndAddToPotentialList([token], token, 1, 0, token.type); // down
+			traceAndAddToPotentialList([token], token, 0, 1, token.type); // right
+		});
+	});
 	
 	function traceAndAddToPotentialList(tempMatchLists, token, rowIndent, colIndent, type){
 

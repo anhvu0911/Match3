@@ -13,7 +13,7 @@ var TOKEN_PER_ROW = 8;
 var TOKEN_PER_COL = 8;
 var BOARD_WIDTH = (TOKEN_SIZE + SPACE) * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
 var BOARD_HEIGHT = (TOKEN_SIZE + SPACE) * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
-var TOTAL_FRAME = 20;
+var TOTAL_FRAME = 24;
 
 var NULL_TOKEN = -1;
 var RED = 0;
@@ -23,9 +23,8 @@ var GREEN = 3;
 var BLUE = 4;
 var MAGENTA = 5;
 var PURPLE = 6;
-// var IMAGE_SET = "images/elemental/";
+var IMAGE_SET = "images/elemental/";
 // var IMAGE_SET = "images/browsers/";
-var IMAGE_SET = "images/token/";
 
 var requestAnimationFrame;
 var gameCanvas;

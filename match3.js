@@ -29,9 +29,10 @@ var PURPLE = 7;
 
 // Token state
 var NORMAL_STATE = 0;
-var HOVER_STATE = 0;
-var SELECT_STATE = 0;
-var EXPLODE_STATE = 0;
+var HOVER_STATE = 1;
+var SELECT_STATE = 2;
+var EXPLODE_STATE = 3;
+var HINT_STATE = 4;
 
 var requestAnimationFrame;
 var gameCanvas;
@@ -98,19 +99,45 @@ function Token(col, row, type, img){
 		token.calculateXY();
 	}
 	
+	this.setState = function(state){
+		this.state = state;
+		switch(state){
+			case HOVER_STATE: this.draw = hoverDraw;break;
+			case SELECT_STATE: this.draw = selectDraw;break;
+			case EXPLODE_STATE: this.draw = explodeDraw;break;
+			case HINT_STATE: this.draw = hintDraw;break;
+			default: this.draw = normalDraw;
+		}
+	}
+	
 	this.draw = normalDraw;
 	
 	function normalDraw(){
-		if(this.selected){
-			context.strokeStyle = "lightgray";
-			context.strokeRect(this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE, TOKEN_SIZE);
-		}
 		context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
 		
 		//Debugging info
-		// context.fillStyle = "black";
+		// context.fillStyle = "lightgray";
 		// context.font = "15pt Aria";
 		// context.fillText(this.row + "," + this.col, this.x + 10, this.y+20);
+	}
+	
+	function hoverDraw(){
+	}
+	
+	function selectDraw(){
+		context.strokeStyle = "lightgray";
+		context.strokeRect(this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE, TOKEN_SIZE);
+		context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
+	}
+	
+	function explodeDraw(){
+		console.log("explosion desu");
+	}
+	
+	function hintDraw(){
+		context.strokeStyle = "lightgray";
+		context.strokeRect(this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE, TOKEN_SIZE);
+		context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
 	}
 	
 }
@@ -202,12 +229,12 @@ function toggleClickEvent(on){
 // Factory method, create random Token for col, row
 function createToken(col, row){
 	switch(parseInt(Math.random()*7)){
-		case RED:	 return new Token(col, row, RED, "red.png");
-		case ORANGE: return new Token(col, row, ORANGE,"orange.png");
-		case YELLOW: return new Token(col, row, YELLOW,"yellow.png");
-		case GREEN:	 return new Token(col, row, GREEN,"green.png");
-		case BLUE:	 return new Token(col, row, BLUE,"blue.png");
-		case MAGENTA:return new Token(col, row, MAGENTA,"magenta.png");
+		case RED:	 return new Token(col, row, RED, "red.png");break;
+		case ORANGE: return new Token(col, row, ORANGE,"orange.png");break;
+		case YELLOW: return new Token(col, row, YELLOW,"yellow.png");break;
+		case GREEN:	 return new Token(col, row, GREEN,"green.png");break;
+		case BLUE:	 return new Token(col, row, BLUE,"blue.png");break;
+		case MAGENTA:return new Token(col, row, MAGENTA,"magenta.png");break;
 		default: return new Token(col, row, PURPLE,"purple.png");
 	}
 }
@@ -276,28 +303,28 @@ function selectToken(e){
 	
 	if (isSelectingFirst) {
 		firstSelectedToken = board[selectedCell.col][selectedCell.row];
-		firstSelectedToken.selected = true;
+		firstSelectedToken.setState(SELECT_STATE);
 	} else {
 		lastSelectedToken = board[selectedCell.col][selectedCell.row];
 
 		// If the same token => Deselect
 		if (firstSelectedToken.isOnTheSameCellWith(lastSelectedToken)) {
-			firstSelectedToken.selected = false;
+			firstSelectedToken.setState();
 			
 		// If they are next to each other, swap
 		} else if (lastSelectedToken.isAdjacentTo(firstSelectedToken)) {
-			firstSelectedToken.selected = false;
+			firstSelectedToken.setState();
 			swap(firstSelectedToken, lastSelectedToken);
 			firstSelectedToken = null;
 		
 		// If they are far away, re-select the first token
 		} else {
 			// Deselect first token
-			firstSelectedToken.selected = false;
+			firstSelectedToken.setState();
 			
 			// set the first token as the newly selected
 			firstSelectedToken = board[selectedCell.col][selectedCell.row];
-			firstSelectedToken.selected = true;
+			firstSelectedToken.setState(SELECT_STATE);
 			isSelectingFirst = !isSelectingFirst;
 		}
 	}
@@ -315,9 +342,9 @@ function onMouseMove(e){
 		/*if(firstDraggedToken == null || !firstDraggedToken.isOnTheSameCellWith(hoverCell)){	
 			if (isSelectingFirst) {
 				firstDraggedToken = board[hoverCell.col][hoverCell.row];
-				firstDraggedToken.selected = true;
+				firstDraggedToken.setState(SELECT_STATE);
 			} else {
-				firstDraggedToken.selected = false;
+				firstDraggedToken.setState();
 				lastDraggedToken = board[hoverCell.col][hoverCell.row];
 				
 				if (lastDraggedToken.isAdjacentTo(firstDraggedToken)) {
@@ -326,7 +353,7 @@ function onMouseMove(e){
 					// Find a way to force mouseup
 				} else {
 					firstDraggedToken = board[hoverCell.col][hoverCell.row];
-					firstDraggedToken.selected = true;
+					firstDraggedToken.setState(SELECT_STATE);
 					isSelectingFirst = !isSelectingFirst;
 				}
 			}
@@ -335,7 +362,7 @@ function onMouseMove(e){
 	
 	// Hover
 	} else{
-		//board[hoverCell.col][hoverCell.row].selected=true;
+		//board[hoverCell.col][hoverCell.row].setState(HOVER_STATE);
 	}
 	
 	
@@ -639,7 +666,7 @@ function hint(e){
 	console.log("================Check Hint===================");
 	for(var i = 0; i < hintList.length; i++){
 		for(var j = 0; j<hintList[i].length; j++){
-			hintList[i][j].selected = true;
+			hintList[i][j].setState(HINT_STATE);
 			console.log(hintList[i][j]);
 		}
 		console.log("---");

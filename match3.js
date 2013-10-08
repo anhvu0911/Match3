@@ -14,7 +14,7 @@ var TOKEN_PER_ROW = 8;
 var TOKEN_PER_COL = 8;
 var BOARD_WIDTH = CELL_SIZE * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
 var BOARD_HEIGHT = CELL_SIZE * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
-var TOTAL_FRAME = 30;
+var TOTAL_FRAME = 26;
 var IMAGE_SET = "images/elemental/";
 // var IMAGE_SET = "images/browsers/";
 
@@ -132,6 +132,7 @@ function Token(col, row, type, img){
 	
 	function drawExplosion(){
 		console.log("explosion desu");
+		//context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
 	}
 	
 	function drawHint(){
@@ -480,21 +481,40 @@ function explode(matchLists){
 	
 	matchLists.forEach(function(match){
 	
+		var triggerTokenExplosion = function(){
+			match.forEach(function(token) {
+				token.setState(EXPLODE_STATE);
+			});
+		};
+	
 		// horizontal slash
 		if (match[0].row == match[1].row){
-			slash(match[0].x - CELL_SIZE/4, match[0].y + CELL_SIZE/2 - slashImg.height/2,
-				  match[match.length-1].x + CELL_SIZE, match[match.length-1].y + CELL_SIZE/2 - slashImg.height/2);
+			slash(match[0].x - CELL_SIZE/4, 
+				  match[0].y + CELL_SIZE/2 - slashImg.height/2,
+				  match[match.length-1].x + CELL_SIZE, 
+				  match[match.length-1].y + CELL_SIZE/2 - slashImg.height/2, 
+				  triggerTokenExplosion);
 				  
 		// vertical slash
 		} else {
-			slash(match[0].x + CELL_SIZE/2 + slashImg.height/2, match[0].y - CELL_SIZE/4,
-				  match[match.length-1].x + CELL_SIZE/2 + slashImg.height/2, match[match.length-1].y + CELL_SIZE, Math.PI/2);
+			slash(match[0].x + CELL_SIZE/2 + slashImg.height/2, 
+				  match[0].y - CELL_SIZE/4,
+				  match[match.length-1].x + CELL_SIZE/2 + slashImg.height/2, 
+				  match[match.length-1].y + CELL_SIZE, 
+				  triggerTokenExplosion,
+				  Math.PI/2);
 		}
+		
+		// waitForAnimationFinish(TOTAL_FRAME/2, function(){
+			// match.forEach(function(token) {
+				// token.setState(EXPLODE_STATE);
+			// });
+		// });
 	});
 	
-	function slash(startX, startY, endX, endY, rotate){
+	function slash(startX, startY, endX, endY, callback, rotate){
 		var frame = 0;
-		var total_frame = 15;
+		var total_frame = TOTAL_FRAME / 2;
 		var slashSectionLength = Math.round(total_frame/2);
 		
 		var deltaWidth = ((endX - startX) + (endY - startY)) / slashSectionLength;
@@ -518,11 +538,9 @@ function explode(matchLists){
 			if (frame < total_frame){
 				requestAnimationFrame(drawHorizontalSlash);
 			} else {
-				console.log("done");
-				
-				// if (typeof(callback) == 'function'){
-					// callback();
-				// }
+				if (typeof(callback) == 'function'){
+					callback();
+				}
 			}
 		};
 		
@@ -541,17 +559,14 @@ function explode(matchLists){
 			if (frame < total_frame){
 				requestAnimationFrame(drawVerticalSlash);
 			} else {
-				console.log("done");
-				
-				// if (typeof(callback) == 'function'){
-					// callback();
-				// }
+				if (typeof(callback) == 'function'){
+					callback();
+				}
 			}
 		};
 	}
 	
-	
-	//dropDown(deduplicateInMatchList(matchLists));
+	waitForAnimationFinish(TOTAL_FRAME, dropDown, deduplicateInMatchList(matchLists));
 }
 
 // TODO: Make animation of dropping
@@ -610,7 +625,7 @@ function dropDown(matchLists){
 	waitForAnimationFinish(TOTAL_FRAME*1.5, checkMatches);
 }
 
-function waitForAnimationFinish(frame, callback){
+function waitForAnimationFinish(frame, callback, param){
 	toggleClickEvent(false);
 	var f = 0;
 	
@@ -621,7 +636,7 @@ function waitForAnimationFinish(frame, callback){
 		} else {
 			toggleClickEvent(true);
 			if (typeof(callback) == 'function'){
-				callback();
+				callback(param);
 			}
 		}
 	})();

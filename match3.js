@@ -62,25 +62,17 @@ function Token(col, row, type, img){
 		this.x = this.col*CELL_SIZE;
 		this.y = this.row*CELL_SIZE;
 	}
+	this.calculateXY();
+	
 	this.isOnTheSameCellWith = function(token){
 		return (this.row == token.row) && (this.col == token.col);
 	}
+	
 	this.isAdjacentTo = function(token){
 		return (((Math.abs(this.row - token.row) == 1) && (this.col == token.col)) // same column
 			|| ((Math.abs(this.col - token.col) == 1) && (this.row == token.row))) // same row;
 	}
-	this.draw = function(){
-		if(this.selected){
-			context.strokeStyle = "lightgray";
-			context.strokeRect(this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE, TOKEN_SIZE);
-		}
-		context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
-		
-		//Debugging info
-		// context.fillStyle = "black";
-		// context.font = "15pt Aria";
-		// context.fillText(this.row + "," + this.col, this.x + 10, this.y+20);
-	}
+	
 	this.toString = function(){
 		return "[" + this.type + "]" + this.row + "-" + this.col + "(" + this.x + "," + this.y + ")";
 	}
@@ -106,7 +98,21 @@ function Token(col, row, type, img){
 		token.calculateXY();
 	}
 	
-	this.calculateXY();
+	this.draw = normalDraw;
+	
+	function normalDraw(){
+		if(this.selected){
+			context.strokeStyle = "lightgray";
+			context.strokeRect(this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE, TOKEN_SIZE);
+		}
+		context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
+		
+		//Debugging info
+		// context.fillStyle = "black";
+		// context.font = "15pt Aria";
+		// context.fillText(this.row + "," + this.col, this.x + 10, this.y+20);
+	}
+	
 }
 
 // =============================================
@@ -195,7 +201,7 @@ function toggleClickEvent(on){
 
 // Factory method, create random Token for col, row
 function createToken(col, row){
-	switch(parseInt(Math.random()*3)){
+	switch(parseInt(Math.random()*7)){
 		case RED:	 return new Token(col, row, RED, "red.png");
 		case ORANGE: return new Token(col, row, ORANGE,"orange.png");
 		case YELLOW: return new Token(col, row, YELLOW,"yellow.png");
@@ -461,7 +467,7 @@ function explode(matchLists){
 	
 	function slash(startX, startY, endX, endY, rotate){
 		var frame = 0;
-		var total_frame = 21;
+		var total_frame = 15;
 		var slashSectionLength = Math.round(total_frame/2);
 		
 		var deltaWidth = ((endX - startX) + (endY - startY)) / slashSectionLength;
@@ -518,7 +524,7 @@ function explode(matchLists){
 	}
 	
 	
-	dropDown(deduplicateInMatchList(matchLists));
+	//dropDown(deduplicateInMatchList(matchLists));
 }
 
 // TODO: Make animation of dropping

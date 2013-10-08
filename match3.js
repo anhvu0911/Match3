@@ -102,17 +102,17 @@ function Token(col, row, type, img){
 	this.setState = function(state){
 		this.state = state;
 		switch(state){
-			case HOVER_STATE: this.draw = hoverDraw;break;
-			case SELECT_STATE: this.draw = selectDraw;break;
-			case EXPLODE_STATE: this.draw = explodeDraw;break;
-			case HINT_STATE: this.draw = hintDraw;break;
-			default: this.draw = normalDraw;
+			case HOVER_STATE: 	this.draw = drawHover;		break;
+			case SELECT_STATE: 	this.draw = drawSelected;	break;
+			case EXPLODE_STATE: this.draw = drawExplosion;	break;
+			case HINT_STATE: 	this.draw = drawHint; 		break;
+			default: 			this.draw = drawNormal;
 		}
 	}
 	
-	this.draw = normalDraw;
+	this.draw = drawNormal;
 	
-	function normalDraw(){
+	function drawNormal(){
 		context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
 		
 		//Debugging info
@@ -121,22 +121,22 @@ function Token(col, row, type, img){
 		// context.fillText(this.row + "," + this.col, this.x + 10, this.y+20);
 	}
 	
-	function hoverDraw(){
+	function drawHover(){
 	}
 	
-	function selectDraw(){
+	function drawSelected(){
 		context.strokeStyle = "lightgray";
 		context.strokeRect(this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE, TOKEN_SIZE);
 		context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
 	}
 	
-	function explodeDraw(){
+	function drawExplosion(){
 		console.log("explosion desu");
 	}
 	
-	function hintDraw(){
-		context.strokeStyle = "lightgray";
-		context.strokeRect(this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE, TOKEN_SIZE);
+	function drawHint(){
+		context.fillStyle = "#444";
+		context.fillRect(this.col*CELL_SIZE, this.row*CELL_SIZE, CELL_SIZE, CELL_SIZE);
 		context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
 	}
 	

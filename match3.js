@@ -111,6 +111,7 @@ function Token(col, row, type, img){
 			default: 			this.draw = drawNormal;
 		}
 		
+		// for drawing explosion animation
 		half1x = this.x;
 		half1y = this.y;
 		half2x = this.x;
@@ -121,11 +122,6 @@ function Token(col, row, type, img){
 	
 	function drawNormal(){
 		context.drawImage(this.img, this.x, this.y, TOKEN_SIZE, TOKEN_SIZE);
-		
-		//Debugging info
-		// context.fillStyle = "lightgray";
-		// context.font = "15pt Aria";
-		// context.fillText(this.row + "," + this.col, this.x + 10, this.y+20);
 	}
 	
 	function drawHover(){
@@ -138,7 +134,7 @@ function Token(col, row, type, img){
 	}
 	
 	// var alpha = 1;
-	// var deltaAlpha = 1 / (TOTAL_FRAME / 2);
+	// var deltaAlpha = 1 / (TOTAL_FRAME);
 	// function drawExplosionHorizontal(){
 		// alpha -= deltaAlpha;
 		// if(alpha > 0){
@@ -156,11 +152,11 @@ function Token(col, row, type, img){
 	var half2y = this.y; // use for vertical slash
 	var delta = (TOKEN_SIZE/4) / (TOTAL_FRAME/2);
 	var alpha = 1;
-	var deltaAlpha = 0.5 / (TOTAL_FRAME / 2);
+	var deltaAlpha = 1 / (TOTAL_FRAME / 2);
 	
 	function drawExplosionHorizontal(){
 		alpha -= deltaAlpha;
-		if(alpha > 0.5){
+		if(alpha > 0){
 			
 			context.globalAlpha = alpha;
 			context.drawImage(this.img, 0, 0, TOKEN_SIZE, TOKEN_SIZE/2, 
@@ -535,10 +531,10 @@ function explode(matchLists){
 	
 		// horizontal slash
 		if (match[0].row == match[1].row){
-			slash(match[0].x - CELL_SIZE/4, 
-				match[0].y + CELL_SIZE/2 - slashImg.height/2,
-				match[match.length-1].x + CELL_SIZE, 
-				match[match.length-1].y + CELL_SIZE/2 - slashImg.height/2, 
+			slash(match[0].x - TOKEN_SIZE/4, 
+				match[0].y + TOKEN_SIZE/2 - slashImg.height/2,
+				match[match.length-1].x + TOKEN_SIZE, 
+				match[match.length-1].y + TOKEN_SIZE/2 - slashImg.height/2, 
 				function(){
 				  	match.forEach(function(token) {
 				  		token.setState(EXPLODE_HORIZONTAL_STATE);
@@ -547,10 +543,10 @@ function explode(matchLists){
 				  
 		// vertical slash
 		} else {
-			slash(match[0].x + CELL_SIZE/2 + slashImg.height/2, 
-				match[0].y - CELL_SIZE/4,
-				match[match.length-1].x + CELL_SIZE/2 + slashImg.height/2, 
-				match[match.length-1].y + CELL_SIZE, 
+			slash(match[0].x + TOKEN_SIZE/2 + slashImg.height/2, 
+				match[0].y - TOKEN_SIZE/4,
+				match[match.length-1].x + TOKEN_SIZE/2 + slashImg.height/2, 
+				match[match.length-1].y + TOKEN_SIZE, 
 				function(){
 				  	match.forEach(function(token) {
 				  		token.setState(EXPLODE_VERTICAL_STATE);

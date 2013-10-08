@@ -8,7 +8,7 @@
  */
 
 var TOKEN_SIZE = 50;
-var SPACE = 10;
+var SPACE = 15;
 var CELL_SIZE = TOKEN_SIZE + SPACE;
 var TOKEN_PER_ROW = 8;
 var TOKEN_PER_COL = 8;
@@ -29,10 +29,11 @@ var PURPLE = 7;
 
 // Token state
 var NORMAL_STATE = 0;
-var HOVER_STATE = 1;
-var SELECT_STATE = 2;
-var EXPLODE_STATE = 3;
-var HINT_STATE = 4;
+var EXPLODE_HORIZONTAL_STATE = 1;
+var EXPLODE_VERTICAL_STATE = 2;
+var SELECT_STATE = 3;
+var HOVER_STATE = 4;
+var HINT_STATE = 5;
 
 var requestAnimationFrame;
 var gameCanvas;
@@ -58,12 +59,6 @@ function Token(col, row, type, img){
 	this.state = NORMAL_STATE;
 	this.img = new Image();
 	this.img.src = IMAGE_SET + img;
-	
-	this.calculateXY = function(){
-		this.x = this.col*CELL_SIZE;
-		this.y = this.row*CELL_SIZE;
-	}
-	this.calculateXY();
 	
 	this.isOnTheSameCellWith = function(token){
 		return (this.row == token.row) && (this.col == token.col);
@@ -99,21 +94,33 @@ function Token(col, row, type, img){
 		token.calculateXY();
 	}
 	
+	this.calculateXY = function(){
+		this.x = this.col*CELL_SIZE + SPACE/2;
+		this.y = this.row*CELL_SIZE + SPACE/2;
+	}
+	this.calculateXY();
+	
 	this.setState = function(state){
 		this.state = state;
 		switch(state){
-			case HOVER_STATE: 	this.draw = drawHover;		break;
+			case EXPLODE_HORIZONTAL_STATE: 	this.draw = drawExplosionHorizontal;	break;
+			case EXPLODE_VERTICAL_STATE: 	this.draw = drawExplosionVertical;break;
 			case SELECT_STATE: 	this.draw = drawSelected;	break;
-			case EXPLODE_STATE: this.draw = drawExplosion;	break;
+			case HOVER_STATE: 	this.draw = drawHover;		break;
 			case HINT_STATE: 	this.draw = drawHint; 		break;
 			default: 			this.draw = drawNormal;
 		}
+		
+		half1x = this.x;
+		half1y = this.y;
+		half2x = this.x;
+		half2y = this.y;
 	}
 	
 	this.draw = drawNormal;
 	
 	function drawNormal(){
-		context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
+		context.drawImage(this.img, this.x, this.y, TOKEN_SIZE, TOKEN_SIZE);
 		
 		//Debugging info
 		// context.fillStyle = "lightgray";
@@ -126,19 +133,64 @@ function Token(col, row, type, img){
 	
 	function drawSelected(){
 		context.strokeStyle = "lightgray";
-		context.strokeRect(this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE, TOKEN_SIZE);
-		context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
+		context.strokeRect(this.x, this.y, TOKEN_SIZE, TOKEN_SIZE);
+		context.drawImage(this.img, this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
 	}
 	
-	function drawExplosion(){
-		console.log("explosion desu");
-		//context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
+	// var alpha = 1;
+	// var deltaAlpha = 1 / (TOTAL_FRAME / 2);
+	// function drawExplosionHorizontal(){
+		// alpha -= deltaAlpha;
+		// if(alpha > 0){
+			// context.globalAlpha = alpha;
+			// context.drawImage(this.img, this.x, this.y, TOKEN_SIZE, TOKEN_SIZE);
+			// context.globalAlpha = 1.0;
+		// }		
+	// }
+
+	
+	// For drawing explosion
+	var half1x = this.x;
+	var half1y = this.y;
+	var half2x = this.x; // use for horizontal slash
+	var half2y = this.y; // use for vertical slash
+	var delta = (TOKEN_SIZE/4) / (TOTAL_FRAME/2);
+	var alpha = 1;
+	var deltaAlpha = 0.5 / (TOTAL_FRAME / 2);
+	
+	function drawExplosionHorizontal(){
+		alpha -= deltaAlpha;
+		if(alpha > 0.5){
+			
+			context.globalAlpha = alpha;
+			context.drawImage(this.img, 0, 0, TOKEN_SIZE, TOKEN_SIZE/2, 
+							  half1x, this.y, TOKEN_SIZE, TOKEN_SIZE/2);
+			context.drawImage(this.img, 0, TOKEN_SIZE/2, TOKEN_SIZE, TOKEN_SIZE/2, 
+							  half2x, this.y+TOKEN_SIZE/2, TOKEN_SIZE, TOKEN_SIZE/2);
+			half1x -= delta;
+			half2x += delta;
+			context.globalAlpha = 1.0;
+		}
+	}
+
+	function drawExplosionVertical(){
+		alpha -= deltaAlpha;
+		if(alpha > 0){
+			context.globalAlpha = alpha;
+			context.drawImage(this.img, 0, 0, TOKEN_SIZE/2, TOKEN_SIZE, 
+							  this.x, half1y, TOKEN_SIZE/2, TOKEN_SIZE);
+			context.drawImage(this.img, TOKEN_SIZE/2, 0, TOKEN_SIZE/2, TOKEN_SIZE, 
+							  this.x+TOKEN_SIZE/2, half2y, TOKEN_SIZE/2, TOKEN_SIZE);
+			half1y -= delta;
+			half2y += delta;
+			context.globalAlpha = 1.0;
+		}
 	}
 	
 	function drawHint(){
 		context.fillStyle = "#444";
 		context.fillRect(this.col*CELL_SIZE, this.row*CELL_SIZE, CELL_SIZE, CELL_SIZE);
-		context.drawImage(this.img, this.x+SPACE, this.y+SPACE, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
+		context.drawImage(this.img, this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
 	}
 	
 }
@@ -481,35 +533,31 @@ function explode(matchLists){
 	
 	matchLists.forEach(function(match){
 	
-		var triggerTokenExplosion = function(){
-			match.forEach(function(token) {
-				token.setState(EXPLODE_STATE);
-			});
-		};
-	
 		// horizontal slash
 		if (match[0].row == match[1].row){
 			slash(match[0].x - CELL_SIZE/4, 
-				  match[0].y + CELL_SIZE/2 - slashImg.height/2,
-				  match[match.length-1].x + CELL_SIZE, 
-				  match[match.length-1].y + CELL_SIZE/2 - slashImg.height/2, 
-				  triggerTokenExplosion);
+				match[0].y + CELL_SIZE/2 - slashImg.height/2,
+				match[match.length-1].x + CELL_SIZE, 
+				match[match.length-1].y + CELL_SIZE/2 - slashImg.height/2, 
+				function(){
+				  	match.forEach(function(token) {
+				  		token.setState(EXPLODE_HORIZONTAL_STATE);
+				  	});
+				});
 				  
 		// vertical slash
 		} else {
 			slash(match[0].x + CELL_SIZE/2 + slashImg.height/2, 
-				  match[0].y - CELL_SIZE/4,
-				  match[match.length-1].x + CELL_SIZE/2 + slashImg.height/2, 
-				  match[match.length-1].y + CELL_SIZE, 
-				  triggerTokenExplosion,
-				  Math.PI/2);
+				match[0].y - CELL_SIZE/4,
+				match[match.length-1].x + CELL_SIZE/2 + slashImg.height/2, 
+				match[match.length-1].y + CELL_SIZE, 
+				function(){
+				  	match.forEach(function(token) {
+				  		token.setState(EXPLODE_VERTICAL_STATE);
+				  	});
+				},
+				Math.PI/2);
 		}
-		
-		// waitForAnimationFinish(TOTAL_FRAME/2, function(){
-			// match.forEach(function(token) {
-				// token.setState(EXPLODE_STATE);
-			// });
-		// });
 	});
 	
 	function slash(startX, startY, endX, endY, callback, rotate){

@@ -15,6 +15,7 @@ function main(){
 	context = gameCanvas.getContext("2d");
 	
 	slashImg = document.getElementById("slash");
+	shineImg = document.getElementById("shine");
 	
 	for(var i=0; i< 15; i++){
 		arrowImg[2*i] = new Image();
@@ -76,6 +77,7 @@ function main(){
 	
 	checkMatches();
 	draw();
+	shineRandomly();
 }
 
 // register mouse event
@@ -533,6 +535,7 @@ function moveToken(token, startX, startY, endX, endY, callback){
 	})();
 }
 
+// TODO: remove hint after 10 sec, or after they match
 // Find all possible matches
 function hint(e){
 	var hintList = getHintList();
@@ -661,4 +664,12 @@ function scamble(callback){
 	console.log("No Match found SCRAMBLEEEEEEEEEEEEEEEEEEEEEE");
 	
 	//if (typeof(callback) == 'function') callback();
+}
+
+function shineRandomly(){
+	waitForAnimationFinish(TOTAL_FRAME*parseInt(Math.random()*20 + 2), function(){
+		//parseInt(Math.random()*7);
+		board[3][3].setState(SHINE_STATE);
+		shineRandomly();
+	});
 }

@@ -34,6 +34,7 @@ var EXPLODE_VERTICAL_STATE = 2;
 var SELECT_STATE = 3;
 var HOVER_STATE = 4;
 var HINT_STATE = 5;
+var SHINE_STATE = 6;
 
 var requestAnimationFrame;
 var gameCanvas;
@@ -44,6 +45,7 @@ var board = [];
 
 // Image resources
 var slashImg;
+var shineImg;
 var arrowImg = [];
 
 // =============================================
@@ -150,19 +152,38 @@ function Token(col, row, type, img){
 		if( this.state != state){
 			this.state = state;
 			switch(state){
-				case EXPLODE_HORIZONTAL_STATE: 	this.draw = drawExplosionHorizontal;	break;
-				case EXPLODE_VERTICAL_STATE: 	this.draw = drawExplosionVertical;break;
-				case SELECT_STATE: 	this.draw = drawSelected;	break;
-				case HOVER_STATE: 	this.draw = drawHover;		break;
-				case HINT_STATE: 	this.draw = drawHint; 		break;
-				default: 			this.draw = drawNormal;
+				case EXPLODE_HORIZONTAL_STATE:
+					this.draw = drawExplosionHorizontal;
+					half1x = this.x;
+					half1y = this.y;
+					half2x = this.x;
+					half2y = this.y;
+					break;
+				case EXPLODE_VERTICAL_STATE:
+					this.draw = drawExplosionVertical;
+					half1x = this.x;
+					half1y = this.y;
+					half2x = this.x;
+					half2y = this.y;
+					break;
+				case SELECT_STATE:
+					this.draw = drawSelected;	
+					break;
+				case HOVER_STATE:
+					this.draw = drawHover;
+					break;
+				case HINT_STATE:
+					this.draw = drawHint;
+					break;
+				case SHINE_STATE:
+					this.draw = drawShine;
+					shineX = this.x - shineImg.width/2;
+					break;
+				default:
+					this.draw = drawNormal;
 			}
 		
 			// for drawing explosion animation
-			half1x = this.x;
-			half1y = this.y;
-			half2x = this.x;
-			half2y = this.y;
 		}
 	}
 	
@@ -243,6 +264,22 @@ function Token(col, row, type, img){
 				this.x + TOKEN_SIZE/2 - arrowImg[arrowIndex%arrowImg.length].width/2, 
 				this.y - TOKEN_SIZE/2);
 		arrowIndex++;
+	}
+	
+	var shineX = 0;
+	var deltaShineX = (TOKEN_SIZE + shineImg.width/2) / TOTAL_FRAME;
+	function drawShine(){		
+		context.drawImage(this.img, this.x, this.y);
+		
+		context.globalCompositeOperation = "source-atop";
+		context.drawImage(shineImg, shineX, this.y);
+		context.globalCompositeOperation = "source-over";
+		
+		shineX += deltaShineX;
+		
+		if(shineX > this.x + TOKEN_SIZE){
+			this.setState(NORMAL_STATE);
+		}
 	}
 	
 }

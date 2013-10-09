@@ -90,6 +90,11 @@ function Token(col, row, type, img){
 		board[tokenCol][tokenRow].col = board[thisCol][thisRow].col;
 		board[thisCol][thisRow].col = tempCol;
 		
+		// Chrome has not supported this yet
+		// [board[tokenCol][tokenRow],board[thisCol][thisRow]] = [board[thisCol][thisRow],board[tokenCol][tokenRow]];
+		// [board[tokenCol][tokenRow].row,board[thisCol][thisRow].row] = [board[thisCol][thisRow].row,board[tokenCol][tokenRow].row];
+		// [board[tokenCol][tokenRow].col,board[thisCol][thisRow].col] = [board[thisCol][thisRow].col,board[tokenCol][tokenRow].col];
+		
 		this.calculateXY();
 		token.calculateXY();
 	}
@@ -121,7 +126,7 @@ function Token(col, row, type, img){
 	this.draw = drawNormal;
 	
 	function drawNormal(){
-		context.drawImage(this.img, this.x, this.y, TOKEN_SIZE, TOKEN_SIZE);
+		context.drawImage(this.img, this.x, this.y);
 	}
 	
 	function drawHover(){
@@ -186,7 +191,7 @@ function Token(col, row, type, img){
 	function drawHint(){
 		context.fillStyle = "#444";
 		context.fillRect(this.col*CELL_SIZE, this.row*CELL_SIZE, CELL_SIZE, CELL_SIZE);
-		context.drawImage(this.img, this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
+		context.drawImage(this.img, this.x, this.y);
 	}
 	
 }

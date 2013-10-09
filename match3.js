@@ -19,13 +19,13 @@ var IMAGE_SET = "images/elemental/";
 // var IMAGE_SET = "images/browsers/";
 
 // 7 Token types
-var RED = 1;
-var ORANGE = 2;
-var YELLOW = 3;
-var GREEN = 4;
-var BLUE = 5;
-var MAGENTA = 6;
-var PURPLE = 7;
+var RED = 0;
+var ORANGE = 1;
+var YELLOW = 2;
+var GREEN = 3;
+var BLUE = 4;
+var MAGENTA = 5;
+var PURPLE = 6;
 
 // Token state
 var NORMAL_STATE = 0;
@@ -44,6 +44,7 @@ var board = [];
 
 // Image resource
 var slashImg;
+var arrowImg = [];
 
 function Cell(col, row){
 	this.col = col;
@@ -195,10 +196,16 @@ function Token(col, row, type, img){
 		context.drawImage(this.img, this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
 	}
 	
+	var arrowIndex = 0;
 	function drawHint(){
-		context.fillStyle = "#444";
-		context.fillRect(this.col*CELL_SIZE, this.row*CELL_SIZE, CELL_SIZE, CELL_SIZE);
+		// context.fillStyle = "#444";
+		// context.fillRect(this.col*CELL_SIZE, this.row*CELL_SIZE, CELL_SIZE, CELL_SIZE);
+		
 		context.drawImage(this.img, this.x, this.y);
+		context.drawImage(arrowImg[arrowIndex%arrowImg.length], 
+				this.x + TOKEN_SIZE/2 - arrowImg[arrowIndex%arrowImg.length].width/2, 
+				this.y - TOKEN_SIZE/2);
+		arrowIndex++;
 	}
 	
 }
@@ -248,6 +255,18 @@ function main(){
 	context = gameCanvas.getContext("2d");
 	
 	slashImg = document.getElementById("slash");
+	
+	for(var i=0; i< 15; i++){
+		arrowImg[2*i] = new Image();
+		arrowImg[2*i+1] = new Image();
+		if (i < 9){
+			arrowImg[2*i].src = "images/arrow000" + (i+1) + ".png";
+			arrowImg[2*i+1].src = "images/arrow000" + (i+1) + ".png";
+		} else {
+			arrowImg[2*i].src = "images/arrow00" + (i+1) + ".png";
+			arrowImg[2*i+1].src = "images/arrow00" + (i+1) + ".png";
+		}
+	}
 
 	requestAnimationFrame = window.requestAnimationFrame ||
         window.webkitRequestAnimationFrame ||
@@ -326,7 +345,8 @@ function createToken(col, row){
 		case GREEN:	 return new Token(col, row, GREEN,"green.png");break;
 		case BLUE:	 return new Token(col, row, BLUE,"blue.png");break;
 		case MAGENTA:return new Token(col, row, MAGENTA,"magenta.png");break;
-		default: return new Token(col, row, PURPLE,"purple.png");
+		case PURPLE:return new Token(col, row, PURPLE,"purple.png");break;
+		default: return new Token(col, row);
 	}
 }
 
@@ -435,9 +455,13 @@ function onMouseMove(e){
 	
 	// Hover
 	} else{
+	
+		// TODO: check if this is selected cell
 		if(oldHoverCell.row != hoverCell.row || oldHoverCell.col != hoverCell.col){
 			if(hoverCell.col < TOKEN_PER_COL && hoverCell.row < TOKEN_PER_ROW){
-					board[oldHoverCell.col][oldHoverCell.row].setState(NORMAL_STATE);
+					// if(board[oldHoverCell.col][oldHoverCell.row].state != SELECT_STATE){
+						board[oldHoverCell.col][oldHoverCell.row].setState(NORMAL_STATE);
+					// }
 					oldHoverCell = hoverCell;
 					board[hoverCell.col][hoverCell.row].setState(HOVER_STATE);
 			} else {
@@ -756,15 +780,22 @@ function hint(e){
 	if (hintList.length == 0){
 		scamble(checkMatches);
 	}
+		
+	// console.log("================Check Hint===================");
+	// hintList.forEach(function (hint){
+		// hint.forEach(function(token){
+			// token.setState(HINT_STATE);
+			// console.log(token);
+		// });
+		// console.log("---");
+	// });
 	
-	console.log("================Check Hint===================");
-	for(var i = 0; i < hintList.length; i++){
-		for(var j = 0; j<hintList[i].length; j++){
-			hintList[i][j].setState(HINT_STATE);
-			console.log(hintList[i][j]);
-		}
-		console.log("---");
-	}
+	// Randomly display a hint
+	var randomIndex = Math.round(Math.random()*hintList.length);
+	hintList[randomIndex].forEach(function(token){
+		token.setState(HINT_STATE);
+		console.log(token);
+	});
 	
 }
 

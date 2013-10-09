@@ -108,21 +108,23 @@ function Token(col, row, type, img){
 	this.calculateXY();
 	
 	this.setState = function(state){
-		this.state = state;
-		switch(state){
-			case EXPLODE_HORIZONTAL_STATE: 	this.draw = drawExplosionHorizontal;	break;
-			case EXPLODE_VERTICAL_STATE: 	this.draw = drawExplosionVertical;break;
-			case SELECT_STATE: 	this.draw = drawSelected;	break;
-			case HOVER_STATE: 	this.draw = drawHover;		break;
-			case HINT_STATE: 	this.draw = drawHint; 		break;
-			default: 			this.draw = drawNormal;
-		}
+		if( this.state != state){
+			this.state = state;
+			switch(state){
+				case EXPLODE_HORIZONTAL_STATE: 	this.draw = drawExplosionHorizontal;	break;
+				case EXPLODE_VERTICAL_STATE: 	this.draw = drawExplosionVertical;break;
+				case SELECT_STATE: 	this.draw = drawSelected;	break;
+				case HOVER_STATE: 	this.draw = drawHover;		break;
+				case HINT_STATE: 	this.draw = drawHint; 		break;
+				default: 			this.draw = drawNormal;
+			}
 		
-		// for drawing explosion animation
-		half1x = this.x;
-		half1y = this.y;
-		half2x = this.x;
-		half2y = this.y;
+			// for drawing explosion animation
+			half1x = this.x;
+			half1y = this.y;
+			half2x = this.x;
+			half2y = this.y;
+		}
 	}
 	
 	this.draw = drawNormal;
@@ -290,7 +292,7 @@ function main(){
 	});
 	
 	toggleClickEvent(true);
-	gameCanvas.addEventListener("mousemove", onMouseMove, false);
+	toggleMouseMoveEvent(true);
 	gameCanvas.addEventListener("keydown", hint, false);
 	
 	checkMatches();
@@ -302,6 +304,15 @@ function toggleClickEvent(on){
 	if(on){
 		gameCanvas.addEventListener("click", selectToken, false);
 	}else{
+		gameCanvas.removeEventListener("click", selectToken, false);
+	}
+}
+
+function toggleMouseMoveEvent(on){
+	if(on){
+		gameCanvas.addEventListener("mousemove", onMouseMove, false);
+	}else{
+		gameCanvas.removeEventListener("mousemove", onMouseMove, false);
 		gameCanvas.removeEventListener("click", selectToken, false);
 	}
 }
@@ -424,20 +435,24 @@ function onMouseMove(e){
 	
 	// Hover
 	} else{
-		if(oldHoverCell != undefined && (oldHoverCell.row != hoverCell.row || oldHoverCell.col != hoverCell.col)){
-			board[oldHoverCell.col][oldHoverCell.row].setState(NORMAL_STATE);
-			oldHoverCell = hoverCell;
+		if(oldHoverCell.row != hoverCell.row || oldHoverCell.col != hoverCell.col){
+			if(hoverCell.col < TOKEN_PER_COL && hoverCell.row < TOKEN_PER_ROW){
+					board[oldHoverCell.col][oldHoverCell.row].setState(NORMAL_STATE);
+					oldHoverCell = hoverCell;
+					board[hoverCell.col][hoverCell.row].setState(HOVER_STATE);
+			} else {
+				board[oldHoverCell.col][oldHoverCell.row].setState(NORMAL_STATE);
+			}
 		}
-		board[hoverCell.col][hoverCell.row].setState(HOVER_STATE);
 	}
-	
-	
 }
 
 // Swap token a and b
 // swapBack: a boolean - if after swap, no match found, swap back
 function swap(a, b, swapBack){
 	toggleClickEvent(false);
+	toggleMouseMoveEvent(false);
+	board[oldHoverCell.col][oldHoverCell.row].setState(NORMAL_STATE);
 	
 	var frame = 0;
 	var deltaX = (b.x - a.x) / TOTAL_FRAME;
@@ -453,6 +468,7 @@ function swap(a, b, swapBack){
 		frame++;
 		if(frame == TOTAL_FRAME){
 			toggleClickEvent(true);
+			toggleMouseMoveEvent(true);
 			a.swapWith(b);
 			if(!swapBack){
 				checkMatches(function(){
@@ -688,6 +704,7 @@ function dropDown(matchLists){
 
 function waitForAnimationFinish(frame, callback, param){
 	toggleClickEvent(false);
+	toggleMouseMoveEvent(false);
 	var f = 0;
 	
 	(function wait(){
@@ -696,6 +713,7 @@ function waitForAnimationFinish(frame, callback, param){
 			requestAnimationFrame(wait);
 		} else {
 			toggleClickEvent(true);
+			toggleMouseMoveEvent(true);
 			if (typeof(callback) == 'function'){
 				callback(param);
 			}

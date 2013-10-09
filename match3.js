@@ -38,6 +38,8 @@ var HINT_STATE = 5;
 var requestAnimationFrame;
 var gameCanvas;
 var context;
+var gridCanvas;
+var gridContext;
 var board = [];
 
 // Image resource
@@ -250,6 +252,8 @@ function main(){
         function(callback) {
           return setTimeout(callback, 1);
         };
+	
+	
 		
 	// Initialize the board, randomize tokens
 	// Generate by board[col][row] -> better dropdown management
@@ -260,11 +264,30 @@ function main(){
 		}
 	}
 	
+	// Draw ONCE, fill the board, loop two times because changing canvas state in loop costs performance	
+	gridCanvas = document.getElementById("gridCanvas");
+	gridContext = gridCanvas.getContext("2d");
+	
+	gridContext.fillStyle = "#222";
+	board.forEach(function(boardCol, i){
+		boardCol.forEach(function (token, j){
+			if((i+j) % 2 != 0){
+				gridContext.fillRect(token.col*CELL_SIZE, token.row*CELL_SIZE, CELL_SIZE, CELL_SIZE);
+			}
+		});
+	});
+	
+	gridContext.fillStyle = "#111";
+	board.forEach(function(boardCol, i){
+		boardCol.forEach(function (token, j){
+			if((i+j) % 2 == 0){
+				gridContext.fillRect(token.col*CELL_SIZE, token.row*CELL_SIZE, CELL_SIZE, CELL_SIZE);
+			}
+		});
+	});
+	
 	toggleClickEvent(true);
-	
-	// TODO: Include dragging event
 	gameCanvas.addEventListener("mousemove", onMouseMove, false);
-	
 	gameCanvas.addEventListener("keydown", hint, false);
 	
 	checkMatches();
@@ -297,25 +320,6 @@ function createToken(col, row){
 function draw(){
 	// Don't use context.clearRect(0, 0, gameCanvas.width, gameCanvas.height); // Performance hack
 	gameCanvas.width = gameCanvas.width;
-	
-	// filling the board, loop two times because changing canvas state in loop costs performance	
-	context.fillStyle = "#222";
-	board.forEach(function(boardCol, i){
-		boardCol.forEach(function (token, j){
-			if((i+j) % 2 != 0){
-				context.fillRect(token.col*CELL_SIZE, token.row*CELL_SIZE, CELL_SIZE, CELL_SIZE);
-			}
-		});
-	});
-	
-	context.fillStyle = "#111";
-	board.forEach(function(boardCol, i){
-		boardCol.forEach(function (token, j){
-			if((i+j) % 2 == 0){
-				context.fillRect(token.col*CELL_SIZE, token.row*CELL_SIZE, CELL_SIZE, CELL_SIZE);
-			}
-		});
-	});
 	
 	// draw each Token
 	board.forEach(function(boardCol, i){

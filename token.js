@@ -147,8 +147,7 @@ function Token(col, row, type, img){
 	this.calculateXY();
 	
 	this.setState = function(state){
-		if( this.state != state){
-			this.state = state;
+		if(this.state != state){
 			switch(state){
 				case EXPLODE_HORIZONTAL_STATE:
 					this.draw = drawExplosionHorizontal;
@@ -168,6 +167,7 @@ function Token(col, row, type, img){
 					this.draw = drawSelected;	
 					break;
 				case HOVER_STATE:
+					if(this.state == SELECT_STATE) return;
 					this.draw = drawHover;
 					break;
 				case HINT_STATE:
@@ -177,6 +177,8 @@ function Token(col, row, type, img){
 				default:
 					this.draw = drawNormal;
 			}
+			
+			this.state = state;
 		}
 	}
 	
@@ -259,6 +261,7 @@ function Token(col, row, type, img){
 		shineX += deltaShineX;
 		
 		if(shineX > this.x + TOKEN_SIZE){
+			// shineX = this.x - shineImg.width/2;
 			this.setState(NORMAL_STATE);
 		}
 	}

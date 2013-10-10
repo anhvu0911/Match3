@@ -202,17 +202,17 @@ function onMouseMove(e){
 	
 	// Hover
 	} else{
-	
-		// TODO: check if this is selected cell
 		if(oldHoverCell.row != hoverCell.row || oldHoverCell.col != hoverCell.col){
 			if(hoverCell.col < TOKEN_PER_COL && hoverCell.row < TOKEN_PER_ROW){
-					// if(board[oldHoverCell.col][oldHoverCell.row].state != SELECT_STATE){
+					if(board[oldHoverCell.col][oldHoverCell.row].state != SELECT_STATE){
 						board[oldHoverCell.col][oldHoverCell.row].setState(NORMAL_STATE);
-					// }
+					}
 					oldHoverCell = hoverCell;
 					board[hoverCell.col][hoverCell.row].setState(HOVER_STATE);
 			} else {
-				board[oldHoverCell.col][oldHoverCell.row].setState(NORMAL_STATE);
+				if(board[oldHoverCell.col][oldHoverCell.row].state != SELECT_STATE){
+					board[oldHoverCell.col][oldHoverCell.row].setState(NORMAL_STATE);
+				}
 			}
 		}
 	}
@@ -539,10 +539,7 @@ function hint(e){
 	
 	// Randomly display a hint
 	var randomIndex = Math.round(Math.random()*(hintList.length-1));
-	console.log("hint " + randomIndex);
-	
 	hintList[randomIndex].forEach(function(token){
-		console.log(token);
 		token.setState(HINT_STATE);
 	});
 	

@@ -22,8 +22,8 @@ var IMAGE_SET = "images/elemental/";
 var RED = 0;
 var ORANGE = 1;
 var YELLOW = 2;
-var GREEN = 3;
-var BLUE = 4;
+var BLUE = 3;
+var GREEN = 4;
 var MAGENTA = 5;
 var PURPLE = 6;
 

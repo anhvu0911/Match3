@@ -348,12 +348,30 @@ function explode(matchLists) {
 	deduplicateInMatchList(matchLists);
 	
 	matchLists.forEach(function(match){
+		var specialToken = null;
+		if (match.length > 3){
+			var index = parseInt(match.length / 2);
+			specialToken = match[index];
+			
+			match.splice(index,1);
+			
+			if(specialToken){
+				console.log(specialToken);
+				match.forEach(function(token) {
+					moveToken(token, token.x, token.y, specialToken.x, specialToken.y, TOTAL_FRAME/2);
+				});
+			}
+		}
+		
+	});
+	
+	matchLists.forEach(function(match){
 		match.forEach(function(token) {
-			token.setState(EXPLODE_STATE);
+			token.setState(EXPLODE_STATE);			
 		});
 	});
 	
-	waitForAnimationFinish(TOTAL_FRAME/2, dropDown, deduplicateInMatchList(matchLists));
+	waitForAnimationFinish(TOTAL_FRAME, dropDown, matchLists);
 }
 
 /*function explode(matchLists){	
@@ -519,10 +537,13 @@ function waitForAnimationFinish(frame, callback, param){
 }
 
 // Move a token from start to end position
-function moveToken(token, startX, startY, endX, endY, callback){
+function moveToken(token, startX, startY, endX, endY, totalFrame){
+	
+	totalFrame = totalFrame == null ? TOTAL_FRAME : totalFrame;
+	
 	var frame = 0;
-	var deltaX = (endX - startX) / TOTAL_FRAME;
-	var deltaY = (endY - startY) / TOTAL_FRAME;
+	var deltaX = (endX - startX) / totalFrame;
+	var deltaY = (endY - startY) / totalFrame;
 	token.x = startX;
 	token.y = startY;
 	
@@ -533,15 +554,11 @@ function moveToken(token, startX, startY, endX, endY, callback){
 		token.y += deltaY;
 	
 		frame++;
-		if (frame < TOTAL_FRAME){
+		if (frame < totalFrame){
 			requestAnimationFrame(move);
 		} else {
 			token.x = endX;
 			token.y = endY;
-			
-			if (typeof(callback) == 'function'){
-				callback();
-			}
 		}
 	})();
 }

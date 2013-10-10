@@ -360,9 +360,9 @@ function explode(matchLists) {
 				match.forEach(function(token) {
 					moveToken(token, token.x, token.y, specialToken.x, specialToken.y, TOTAL_FRAME/2);
 				});
+				// board[specialToken.col][specialToken.row] = new SpecialToken(specialToken);
 			}
 		}
-		
 	});
 	
 	matchLists.forEach(function(match){
@@ -371,7 +371,9 @@ function explode(matchLists) {
 		});
 	});
 	
-	waitForAnimationFinish(TOTAL_FRAME, dropDown, matchLists);
+	waitForAnimationFinish(TOTAL_FRAME, function(){
+		dropDown(matchLists);
+	});
 }
 
 /*function explode(matchLists){	
@@ -458,7 +460,9 @@ function explode(matchLists) {
 		};
 	}
 	
-	waitForAnimationFinish(TOTAL_FRAME, dropDown, deduplicateInMatchList(matchLists));
+	waitForAnimationFinish(TOTAL_FRAME, function(){
+		dropDown(deduplicateInMatchList(matchLists));
+	});
 }*/
 
 // TODO: Make animation of dropping
@@ -517,7 +521,7 @@ function dropDown(matchLists){
 	waitForAnimationFinish(TOTAL_FRAME*1.5, checkMatches);
 }
 
-function waitForAnimationFinish(frame, callback, param){
+function waitForAnimationFinish(frame, callback){
 	toggleClickEvent(false);
 	toggleMouseMoveEvent(false);
 	var f = 0;
@@ -530,7 +534,7 @@ function waitForAnimationFinish(frame, callback, param){
 			toggleClickEvent(true);
 			toggleMouseMoveEvent(true);
 			if (typeof(callback) == 'function'){
-				callback(param);
+				callback();
 			}
 		}
 	})();

@@ -343,9 +343,7 @@ function deduplicateInMatchList(matchLists){
 }
 
 // TODO: Animation Explosion effect
-function explode(matchLists){
-	console.log("explode");
-	
+function explode(matchLists){	
 	matchLists.forEach(function(match){
 	
 		// horizontal slash
@@ -666,10 +664,20 @@ function scamble(callback){
 	//if (typeof(callback) == 'function') callback();
 }
 
+// randomly find a token, make it shine!
 function shineRandomly(){
-	waitForAnimationFinish(TOTAL_FRAME*parseInt(Math.random()*20 + 2), function(){
-		//parseInt(Math.random()*7);
-		board[3][3].setState(SHINE_STATE);
-		shineRandomly();
-	});
+	var f = 0;
+	var total_frame = TOTAL_FRAME*parseInt(Math.random()*20 + 10);
+	
+	(function wait(){
+		f++;
+		if (f < total_frame){
+			requestAnimationFrame(wait);
+		} else {
+			var row = parseInt(Math.random()*TOKEN_PER_ROW);
+			var col = parseInt(Math.random()*TOKEN_PER_COL);
+			board[col][row].setState(SHINE_STATE);
+			shineRandomly();
+		}
+	})();
 }

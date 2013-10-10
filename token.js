@@ -34,7 +34,6 @@ var EXPLODE_VERTICAL_STATE = 2;
 var SELECT_STATE = 3;
 var HOVER_STATE = 4;
 var HINT_STATE = 5;
-var SHINE_STATE = 6;
 
 var requestAnimationFrame;
 var gameCanvas;
@@ -46,7 +45,6 @@ var board = [];
 // Image resources
 var slashImg;
 var shineImg;
-var arrowImg = [];
 
 // =============================================
 // OVERRIDE METHOD
@@ -174,16 +172,11 @@ function Token(col, row, type, img){
 					break;
 				case HINT_STATE:
 					this.draw = drawHint;
-					break;
-				case SHINE_STATE:
-					this.draw = drawShine;
 					shineX = this.x - shineImg.width/2;
 					break;
 				default:
 					this.draw = drawNormal;
 			}
-		
-			// for drawing explosion animation
 		}
 	}
 	
@@ -254,21 +247,9 @@ function Token(col, row, type, img){
 		context.drawImage(this.img, this.x+SPACE/2, this.y+SPACE/2, TOKEN_SIZE-SPACE, TOKEN_SIZE-SPACE);
 	}
 	
-	var arrowIndex = 0;
-	function drawHint(){
-		// context.fillStyle = "#444";
-		// context.fillRect(this.col*CELL_SIZE, this.row*CELL_SIZE, CELL_SIZE, CELL_SIZE);
-		
-		context.drawImage(this.img, this.x, this.y);
-		context.drawImage(arrowImg[arrowIndex%arrowImg.length], 
-				this.x + TOKEN_SIZE/2 - arrowImg[arrowIndex%arrowImg.length].width/2, 
-				this.y - TOKEN_SIZE/2);
-		arrowIndex++;
-	}
-	
 	var shineX = 0;
 	var deltaShineX = (TOKEN_SIZE + shineImg.width/2) / TOTAL_FRAME;
-	function drawShine(){		
+	function drawHint(){	
 		context.drawImage(this.img, this.x, this.y);
 		
 		context.globalCompositeOperation = "source-atop";

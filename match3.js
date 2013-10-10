@@ -17,18 +17,6 @@ function main(){
 	slashImg = document.getElementById("slash");
 	shineImg = document.getElementById("shine");
 	
-	for(var i=0; i< 15; i++){
-		arrowImg[2*i] = new Image();
-		arrowImg[2*i+1] = new Image();
-		if (i < 9){
-			arrowImg[2*i].src = "images/arrow000" + (i+1) + ".png";
-			arrowImg[2*i+1].src = "images/arrow000" + (i+1) + ".png";
-		} else {
-			arrowImg[2*i].src = "images/arrow00" + (i+1) + ".png";
-			arrowImg[2*i+1].src = "images/arrow00" + (i+1) + ".png";
-		}
-	}
-
 	requestAnimationFrame = window.requestAnimationFrame ||
         window.webkitRequestAnimationFrame ||
         window.mozRequestAnimationFrame ||
@@ -38,8 +26,6 @@ function main(){
           return setTimeout(callback, 1);
         };
 	
-	
-		
 	// Initialize the board, randomize tokens
 	// Generate by board[col][row] -> better dropdown management
 	for(var i = 0; i < TOKEN_PER_COL; i++){
@@ -77,7 +63,6 @@ function main(){
 	
 	checkMatches();
 	draw();
-	shineRandomly();
 }
 
 // register mouse event
@@ -550,12 +535,15 @@ function hint(e){
 		// });
 		// console.log("---");
 	// });
+		
 	
 	// Randomly display a hint
-	var randomIndex = Math.round(Math.random()*hintList.length);
+	var randomIndex = Math.round(Math.random()*(hintList.length-1));
+	console.log("hint " + randomIndex);
+	
 	hintList[randomIndex].forEach(function(token){
-		token.setState(HINT_STATE);
 		console.log(token);
+		token.setState(HINT_STATE);
 	});
 	
 }
@@ -664,40 +652,21 @@ function scamble(callback){
 	//if (typeof(callback) == 'function') callback();
 }
 
-// randomly find a token, make it shine!
-function shineRandomly(){
-	var f = 0;
-	var total_frame = TOTAL_FRAME*parseInt(Math.random()*20 + 10);
-	
-	(function wait(){
-		f++;
-		if (f < total_frame){
-			requestAnimationFrame(wait);
-		} else {
-			// var row = parseInt(Math.random()*TOKEN_PER_ROW);
-			// var col = parseInt(Math.random()*TOKEN_PER_COL);
-			// board[col][row].setState(SHINE_STATE);
-			// shineRandomly();
-			drawShine();
-		}
-	})();
-}
-
 // Shine the whole board!!!!
-function drawShine(){
-	var shineX = -BOARD_WIDTH;
-	var deltaShineX = (BOARD_WIDTH + shineImg.width) / TOTAL_FRAME;
+// function drawShine(){
+	// var shineX = -BOARD_WIDTH;
+	// var deltaShineX = (BOARD_WIDTH + shineImg.width) / TOTAL_FRAME;
 	
-	(function shine(){
+	// (function shine(){
 		
-		context.globalCompositeOperation = "source-atop";
-		context.drawImage(shineImg, shineX, 0, BOARD_WIDTH, BOARD_HEIGHT);
-		context.globalCompositeOperation = "source-over";
+		// context.globalCompositeOperation = "source-atop";
+		// context.drawImage(shineImg, shineX, 0, BOARD_WIDTH, BOARD_HEIGHT);
+		// context.globalCompositeOperation = "source-over";
 		
-		shineX += deltaShineX;
+		// shineX += deltaShineX;
 		
-		if(shineX <= BOARD_WIDTH){
-			requestAnimationFrame(shine);
-		}
-	})();
-}
+		// if(shineX <= BOARD_WIDTH){
+			// requestAnimationFrame(shine);
+		// }
+	// })();
+// }

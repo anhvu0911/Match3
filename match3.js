@@ -674,10 +674,30 @@ function shineRandomly(){
 		if (f < total_frame){
 			requestAnimationFrame(wait);
 		} else {
-			var row = parseInt(Math.random()*TOKEN_PER_ROW);
-			var col = parseInt(Math.random()*TOKEN_PER_COL);
-			board[col][row].setState(SHINE_STATE);
-			shineRandomly();
+			// var row = parseInt(Math.random()*TOKEN_PER_ROW);
+			// var col = parseInt(Math.random()*TOKEN_PER_COL);
+			// board[col][row].setState(SHINE_STATE);
+			// shineRandomly();
+			drawShine();
+		}
+	})();
+}
+
+// Shine the whole board!!!!
+function drawShine(){
+	var shineX = -BOARD_WIDTH;
+	var deltaShineX = (BOARD_WIDTH + shineImg.width) / TOTAL_FRAME;
+	
+	(function shine(){
+		
+		context.globalCompositeOperation = "source-atop";
+		context.drawImage(shineImg, shineX, 0, BOARD_WIDTH, BOARD_HEIGHT);
+		context.globalCompositeOperation = "source-over";
+		
+		shineX += deltaShineX;
+		
+		if(shineX <= BOARD_WIDTH){
+			requestAnimationFrame(shine);
 		}
 	})();
 }

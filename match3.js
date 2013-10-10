@@ -83,9 +83,11 @@ function toggleMouseMoveEvent(on){
 	}
 }
 
+// TODO: Optimize, get token from pool, create = garbage collector
 // Factory method, create random Token for col, row
 function createToken(col, row){
-	switch(parseInt(Math.random()*7)){
+	// switch(parseInt(Math.random()*7)){
+	switch(parseInt(Math.random()*5)){
 		case RED:	 return new Token(col, row, RED, "red.png");break;
 		case ORANGE: return new Token(col, row, ORANGE,"orange.png");break;
 		case YELLOW: return new Token(col, row, YELLOW,"yellow.png");break;
@@ -140,6 +142,11 @@ var lastSelectedToken = null;
 function selectToken(e){
 	var selectedCell = getCell(e);
 	
+	// Out of bound?
+	if(selectedCell.col >= TOKEN_PER_COL || selectedCell.row >= TOKEN_PER_ROW){
+		return;
+	}
+	
 	if (isSelectingFirst) {
 		firstSelectedToken = board[selectedCell.col][selectedCell.row];
 		firstSelectedToken.setState(SELECT_STATE);
@@ -154,7 +161,6 @@ function selectToken(e){
 		} else if (lastSelectedToken.isAdjacentTo(firstSelectedToken)) {
 			firstSelectedToken.setState();
 			swap(firstSelectedToken, lastSelectedToken);
-			firstSelectedToken = null;
 		
 		// If they are far away, re-select the first token
 		} else {
@@ -200,6 +206,7 @@ function onMouseMove(e){
 			isSelectingFirst = !isSelectingFirst;
 		}*/
 	
+	// TODO: make hover a instance variable? not go with hint
 	// Hover
 	} else{
 		if(oldHoverCell.row != hoverCell.row || oldHoverCell.col != hoverCell.col){
@@ -255,6 +262,15 @@ function swap(a, b, swapBack){
 // Find the list of matches, auto-call explode
 function checkMatches(callback){
 	var matchLists = findMatches();
+	
+	// Turn all hint tokens into normal
+	// board.forEach(function(boardCol, i){
+		// boardCol.forEach(function (token, j){
+			// if (token.state == HINT_STATE){
+				// token.setState(NORMAL_STATE);
+			// }
+		// });
+	// });
 		
 	// Found some matches, explode them!
 	if(matchLists.length > 0){
@@ -328,7 +344,19 @@ function deduplicateInMatchList(matchLists){
 }
 
 // TODO: Animation Explosion effect
-function explode(matchLists){	
+function explode(matchLists) {
+	deduplicateInMatchList(matchLists);
+	
+	matchLists.forEach(function(match){
+		match.forEach(function(token) {
+			token.setState(EXPLODE_STATE);
+		});
+	});
+	
+	waitForAnimationFinish(TOTAL_FRAME/2, dropDown, deduplicateInMatchList(matchLists));
+}
+
+/*function explode(matchLists){	
 	matchLists.forEach(function(match){
 	
 		// horizontal slash
@@ -339,7 +367,7 @@ function explode(matchLists){
 				match[match.length-1].y + TOKEN_SIZE/2 - slashImg.height/2, 
 				function(){
 				  	match.forEach(function(token) {
-				  		token.setState(EXPLODE_HORIZONTAL_STATE);
+				  		token.setState(SLASH_HORIZONTAL_STATE);
 				  	});
 				});
 				  
@@ -351,7 +379,7 @@ function explode(matchLists){
 				match[match.length-1].y + TOKEN_SIZE, 
 				function(){
 				  	match.forEach(function(token) {
-				  		token.setState(EXPLODE_VERTICAL_STATE);
+				  		token.setState(SLASH_VERTICAL_STATE);
 				  	});
 				},
 				Math.PI/2);
@@ -413,7 +441,7 @@ function explode(matchLists){
 	}
 	
 	waitForAnimationFinish(TOTAL_FRAME, dropDown, deduplicateInMatchList(matchLists));
-}
+}*/
 
 // TODO: Make animation of dropping
 // Temp: Replace with above appropriate tokens

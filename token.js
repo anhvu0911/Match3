@@ -29,11 +29,12 @@ var PURPLE = 6;
 
 // Token state
 var NORMAL_STATE = 0;
-var EXPLODE_HORIZONTAL_STATE = 1;
-var EXPLODE_VERTICAL_STATE = 2;
+var SLASH_HORIZONTAL_STATE = 1;
+var SLASH_VERTICAL_STATE = 2;
 var SELECT_STATE = 3;
 var HOVER_STATE = 4;
 var HINT_STATE = 5;
+var EXPLODE_STATE = 5;
 
 var requestAnimationFrame;
 var gameCanvas;
@@ -149,26 +150,29 @@ function Token(col, row, type, img){
 	this.setState = function(state){
 		if(this.state != state){
 			switch(state){
-				case EXPLODE_HORIZONTAL_STATE:
-					this.draw = drawExplosionHorizontal;
-					half1x = this.x;
-					half1y = this.y;
-					half2x = this.x;
-					half2y = this.y;
-					break;
-				case EXPLODE_VERTICAL_STATE:
-					this.draw = drawExplosionVertical;
-					half1x = this.x;
-					half1y = this.y;
-					half2x = this.x;
-					half2y = this.y;
+				case HOVER_STATE:
+					if(this.state == SELECT_STATE) return;
+					this.draw = drawHover;
 					break;
 				case SELECT_STATE:
 					this.draw = drawSelected;	
 					break;
-				case HOVER_STATE:
-					if(this.state == SELECT_STATE) return;
-					this.draw = drawHover;
+				case SLASH_HORIZONTAL_STATE:
+					this.draw = drawSlashHorizontal;
+					half1x = this.x;
+					half1y = this.y;
+					half2x = this.x;
+					half2y = this.y;
+					break;
+				case SLASH_VERTICAL_STATE:
+					this.draw = drawSlashVertical;
+					half1x = this.x;
+					half1y = this.y;
+					half2x = this.x;
+					half2y = this.y;
+					break;
+				case EXPLODE_STATE:
+					this.draw = drawExplode;
 					break;
 				case HINT_STATE:
 					this.draw = drawHint;
@@ -188,19 +192,31 @@ function Token(col, row, type, img){
 		context.drawImage(this.img, this.x, this.y);
 	}
 	
-	// var alpha = 1;
-	// var deltaAlpha = 1 / (TOTAL_FRAME);
-	// function drawExplosionHorizontal(){
-		// alpha -= deltaAlpha;
-		// if(alpha > 0){
-			// context.globalAlpha = alpha;
+	// Turn token to transparent
+	// var explodeAlpha = 1;
+	// var explodeDeltaAlpha = 1 / (TOTAL_FRAME);
+	// function drawExplode(){
+		// explodeAlpha -= explodeDeltaAlpha;
+		// if(explodeAlpha > 0){
+			// context.globalAlpha = explodeAlpha;
 			// context.drawImage(this.img, this.x, this.y, TOKEN_SIZE, TOKEN_SIZE);
 			// context.globalAlpha = 1.0;
 		// }		
 	// }
-
 	
-	// For drawing explosion
+	// Zoom token out
+	var deltaMinimize = (TOKEN_SIZE - 10) / (TOTAL_FRAME);
+	var size = TOKEN_SIZE;
+	function drawExplode(){
+		if(size > 10){
+			context.drawImage(this.img, this.x, this.y, size, size);
+			this.x += deltaMinimize;
+			this.y += deltaMinimize;
+			size -= 2*deltaMinimize;
+		}
+	}
+
+	// Break the token into halves
 	var half1x = this.x;
 	var half1y = this.y;
 	var half2x = this.x; // use for horizontal slash
@@ -209,7 +225,7 @@ function Token(col, row, type, img){
 	var alpha = 1;
 	var deltaAlpha = 1 / (TOTAL_FRAME / 2);
 	
-	function drawExplosionHorizontal(){
+	function drawSlashHorizontal(){
 		alpha -= deltaAlpha;
 		if(alpha > 0){
 			context.globalAlpha = alpha;
@@ -223,7 +239,7 @@ function Token(col, row, type, img){
 		}
 	}
 
-	function drawExplosionVertical(){
+	function drawSlashVertical(){
 		alpha -= deltaAlpha;
 		if(alpha > 0){
 			context.globalAlpha = alpha;

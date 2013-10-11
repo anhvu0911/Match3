@@ -107,6 +107,9 @@ function draw(){
 	// draw each Token
 	board.forEach(function(boardCol, i){
 		boardCol.forEach(function (token, j){
+			if (token.specialToken){
+				token.specialToken.draw(token);
+			}
 			token.draw();
 		});
 	});
@@ -360,15 +363,16 @@ function explode(matchLists) {
 				match.forEach(function(token) {
 					moveToken(token, token.x, token.y, specialToken.x, specialToken.y, TOTAL_FRAME/2);
 				});
-				// board[specialToken.col][specialToken.row] = new SpecialToken(specialToken);
+				board[specialToken.col][specialToken.row].specialToken = new SpecialToken();
 			}
 		}
-	});
-	
-	matchLists.forEach(function(match){
-		match.forEach(function(token) {
-			token.setState(EXPLODE_STATE);			
-		});
+		
+		// Other match explodes normally
+		if(specialToken == null){
+			match.forEach(function(token) {
+				token.setState(EXPLODE_STATE);			
+			});
+		}
 	});
 	
 	waitForAnimationFinish(TOTAL_FRAME, function(){

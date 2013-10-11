@@ -100,6 +100,7 @@ function Token(col, row, type, img){
 	this.state = NORMAL_STATE;
 	this.img = new Image();
 	this.img.src = IMAGE_SET + img;
+	this.specialToken = null;
 	
 	this.isOnTheSameCellWith = function(token){
 		return (this.row == token.row) && (this.col == token.col);
@@ -282,50 +283,10 @@ function Token(col, row, type, img){
 	}
 }
 
-/*
-// Decorator pattern special token
-function SpecialToken(aToken){
-	this.token = aToken;
-	this.row = aToken.row;
-	this.col = aToken.col;
-	this.type = aToken.type;
-	this.state = aToken.state;
-	this.img = aToken.img;
-	
-	// this.row = aToken.row;
-	// this.col = aToken.col;
-	// this.type = aToken.type;
-	
-	this.draw = function(){
+// 4-in-a-row match = Bomb!
+function SpecialToken(){	
+	this.draw = function(token){
 		context.fillStyle="#fff";
-		context.fillRect(this.token.x,this.token.y,TOKEN_SIZE,TOKEN_SIZE);
-		this.token.draw();
+		context.fillRect(token.x,token.y,TOKEN_SIZE,TOKEN_SIZE);
 	}
-	
-	// this.isOnTheSameCellWith = function(token){
-		// return this.token.isOnTheSameCellWith(token);
-	// }
-	
-	// this.isAdjacentTo = function(token){
-		// return this.token.isAdjacentTo(token);
-	// }
-	
-	// this.toString = function(){
-		// return "SPECIAL TOKEN [" + this.token.type + "]" + this.token.row + "-" + this.token.col + "(" + this.token.x + "," + this.token.y + ")";
-	// }
-	// this.swapWith = function (token) {
-		// this.token.calculateXY(token);
-		// this.row = this.token.row;
-		// this.col = this.token.col;
-	// }
-	
-	// this.calculateXY = function(){
-		// this.token.calculateXY();
-	// }
-	
-	// this.setState = function(state){
-		// this.token.setState(state);
-	// }
 }
-SpecialToken.prototype = new Token();
-SpecialToken.prototype.constructor = SpecialToken;*/

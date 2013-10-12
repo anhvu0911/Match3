@@ -31,7 +31,8 @@ function main(){
 	for(var i = 0; i < TOKEN_PER_COL; i++){
 		board[i] = [];
 		for(var j = 0; j < TOKEN_PER_ROW; j++){
-			board[i][j] = createToken(i, j);
+			board[i][j] = new Token(i, j);
+			board[i][j].setType(Math.round(Math.random()*NUMBER_OF_TOKEN_TYPE));
 		}
 	}
 	
@@ -86,8 +87,7 @@ function toggleMouseMoveEvent(on){
 // TODO: Optimize, get token from pool, create = garbage collector
 // Factory method, create random Token for col, row
 function createToken(col, row){
-	// switch(parseInt(Math.random()*7)){
-	switch(parseInt(Math.random()*5)){
+	switch(parseInt(Math.random()*NUMBER_OF_TOKEN_TYPE)){
 		case RED:	 return new Token(col, row, RED, "red.png");break;
 		case ORANGE: return new Token(col, row, ORANGE,"orange.png");break;
 		case YELLOW: return new Token(col, row, YELLOW,"yellow.png");break;
@@ -107,8 +107,8 @@ function draw(){
 	// draw each Token
 	board.forEach(function(boardCol, i){
 		boardCol.forEach(function (token, j){
-			if (token.specialToken){
-				token.specialToken.draw(token);
+			if (token.special){
+				token.special.draw(token);
 			}
 			token.draw();
 		});
@@ -334,11 +334,15 @@ function findMatches(){
 
 // Merge match lists that have the same tokens
 function deduplicateInMatchList(matchLists){
+	var commonToken = null;
+	// var commonTokenList = [];
 	for(i = 0; i < matchLists.length - 1; i++){
 		for(j = i+1; j < matchLists.length; j++){
-			if(matchLists[i].hasCommonElement(matchLists[j])){
+			if(commonToken = matchLists[i].intersectWith(matchLists[j])){
+				// commonTokenList.push(commonToken);
 				matchLists[i].merge(matchLists[j]);
 				matchLists.splice(j,1);
+				matchLists[i].push(commonToken);
 				break;
 			}	
 		}
@@ -351,26 +355,12 @@ function explode(matchLists) {
 	deduplicateInMatchList(matchLists);
 	
 	matchLists.forEach(function(match){
-		var specialToken = null;
-		if (match.length > 3){
-			var index = parseInt(match.length / 2);
-			specialToken = match[index];
-			
-			match.splice(index,1);
-			
-			if(specialToken){
-				console.log(specialToken);
-				match.forEach(function(token) {
-					moveToken(token, token.x, token.y, specialToken.x, specialToken.y, TOTAL_FRAME/2);
-				});
-				board[specialToken.col][specialToken.row].specialToken = new SpecialToken();
-			}
-		}
+		var specialToken = decideSpecialToken(match);
 		
 		// Other match explodes normally
 		if(specialToken == null){
 			match.forEach(function(token) {
-				token.setState(EXPLODE_STATE);			
+				token.setState(EXPLODE_STATE);
 			});
 		}
 	});
@@ -378,7 +368,68 @@ function explode(matchLists) {
 	waitForAnimationFinish(TOTAL_FRAME, function(){
 		dropDown(matchLists);
 	});
+	
+	// 4 matches = black hole
+	// >=5 matches I = same color
+	// >=5 matches L,T = shuriken
+	function decideSpecialToken(match){
+		var specialToken = null;
+		
+		// create black hole token at selected token, or the 2nd in match
+		if (match.length == 4){
+			var index = 1;
+			
+			match.forEach(function(token, i){
+				if(firstSelectedToken != null && lastSelectedToken != null &&
+				(token.isOnTheSameCellWith(firstSelectedToken) || token.isOnTheSameCellWith(lastSelectedToken))) {
+					index = i;
+					firstSelectedToken = null;
+					lastSelectedToken = null;
+				}
+			});
+			
+			specialToken = match[index];
+			match.splice(index,1);
+			specialToken.special = new BlackHoleToken();
+				console.log("4 match: " + specialToken);
+			
+		// 5-in-a-row match on a straight line
+		} else if (match.length == 5){
+			specialToken = match[2];
+			match.splice(2,1);
+			specialToken.setType(SPECIAL);
+			
+				console.log("5 I straight line: " + specialToken);
+				
+		// 5-in-a-row match on a zig zag line = shuriken
+		} else if (match.length == 6 || match.length == 7){
+			specialToken = match.pop();
+			
+				console.log(match.indexOf(specialToken) + "    5 L: " + specialToken);
+				
+			match.splice(match.indexOf(specialToken),1);
+			specialToken.special = new ShurikenToken();
+				
+			
+		// more than 7 tokens, super special!!!!
+		} else if (match.length > 7){
+			specialToken = match.pop();
+				console.log(match.indexOf(specialToken) + "    lucky you!   " + specialToken);
+			match.splice(match.indexOf(specialToken),1);
+			
+			specialToken.special = new TestToken();
+		}
+		
+		if(specialToken){
+			match.forEach(function(token) {
+				moveToken(token, token.x, token.y, specialToken.x, specialToken.y, TOTAL_FRAME/2);
+			});
+		}
+		
+		return specialToken;
+	}
 }
+
 
 /*function explode(matchLists){	
 	matchLists.forEach(function(match){

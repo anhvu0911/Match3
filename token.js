@@ -19,6 +19,7 @@ var IMAGE_SET = "images/elemental/";
 // var IMAGE_SET = "images/browsers/";
 
 // 7 Token types
+var NUMBER_OF_TOKEN_TYPE=5;//7;
 var RED = 0;
 var ORANGE = 1;
 var YELLOW = 2;
@@ -26,6 +27,7 @@ var BLUE = 3;
 var GREEN = 4;
 var MAGENTA = 5;
 var PURPLE = 6;
+var SPECIAL = 7; // 5-in-a-row match on a straight line = destroy same color token!
 
 // Token state
 var NORMAL_STATE = 0;
@@ -52,13 +54,13 @@ var shineImg;
 // =============================================
 
 // If two arrays intersect, return true!
-Array.prototype.hasCommonElement = function(array){
+Array.prototype.intersectWith = function(array){
 	for(var i = 0; i < array.length; i++){
 		if(this.indexOf(array[i]) >= 0){
-			return true;
+			return array[i];
 		}
 	}
-	return false;
+	return null;
 }
 
 // Concat 2 arrays, no duplicate
@@ -100,7 +102,7 @@ function Token(col, row, type, img){
 	this.state = NORMAL_STATE;
 	this.img = new Image();
 	this.img.src = IMAGE_SET + img;
-	this.specialToken = null;
+	this.special = null;
 	
 	this.isOnTheSameCellWith = function(token){
 		return (this.row == token.row) && (this.col == token.col);
@@ -147,6 +149,20 @@ function Token(col, row, type, img){
 	}
 	this.calculateXY();
 	
+	this.setType = function(type){
+		this.type = type;
+		switch(type){
+			case RED:	 this.img.src = IMAGE_SET + "red.png"; break;
+			case ORANGE: this.img.src = IMAGE_SET + "orange.png"; break;
+			case YELLOW: this.img.src = IMAGE_SET + "yellow.png"; break;
+			case GREEN:	 this.img.src = IMAGE_SET + "green.png"; break;
+			case BLUE:	 this.img.src = IMAGE_SET + "blue.png"; break;
+			case MAGENTA:this.img.src = IMAGE_SET + "magenta.png"; break;
+			case PURPLE: this.img.src = IMAGE_SET + "purple.png"; break;
+			case SPECIAL:this.img.src = IMAGE_SET + "special.png"; break;
+			default: 	 this.img.src = null; return;
+		}
+	}
 	this.setState = function(state){
 		if(this.state != state){
 			switch(state){
@@ -283,10 +299,26 @@ function Token(col, row, type, img){
 	}
 }
 
-// 4-in-a-row match = Bomb!
-function SpecialToken(){	
+// 4-in-a-row match = Black Hole! destroy adjacent tokens
+function BlackHoleToken(){	
 	this.draw = function(token){
 		context.fillStyle="#fff";
+		context.fillRect(token.x,token.y,TOKEN_SIZE,TOKEN_SIZE);
+	}
+}
+
+// 5-in-a-row match zig zag line = Shuriken! destroy tokens on the same row + column
+function ShurikenToken(){	
+	this.draw = function(token){
+		context.fillStyle="#34fe43";
+		context.fillRect(token.x,token.y,TOKEN_SIZE,TOKEN_SIZE);
+	}
+}
+
+// more than 7-in-a-row match. Not even know what this is?
+function TestToken(){	
+	this.draw = function(token){
+		context.fillStyle="#fe3443";
 		context.fillRect(token.x,token.y,TOKEN_SIZE,TOKEN_SIZE);
 	}
 }

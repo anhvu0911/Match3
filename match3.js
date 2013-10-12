@@ -365,11 +365,13 @@ function deduplicateInMatchList(matchLists){
 
 // TODO: Animation Explosion effect
 function explode(matchLists) {
+	
+	var waitTime = TOTAL_FRAME;
 	matchLists.forEach(function(match){	
 		var boom = false;
 		match.forEach(function(token) {
 			if(token.special){
-				token.special.explode(match, token);
+				waitTime = token.special.explode(match, token);
 				boom = true;
 				return;
 			}
@@ -392,7 +394,7 @@ function explode(matchLists) {
 		} 
 	});
 	
-	waitForAnimationFinish(TOTAL_FRAME, function(){
+	waitForAnimationFinish(waitTime, function(){
 		dropDown(matchLists);
 	});
 	
@@ -561,7 +563,6 @@ function hint(e){
 		// });
 		// console.log("---");
 	// });
-		
 	
 	// Randomly display a hint
 	var randomIndex = Math.round(Math.random()*(hintList.length-1));
@@ -674,22 +675,3 @@ function scamble(callback){
 	
 	//if (typeof(callback) == 'function') callback();
 }
-
-// Shine the whole board!!!!
-// function drawShine(){
-	// var shineX = -BOARD_WIDTH;
-	// var deltaShineX = (BOARD_WIDTH + shineImg.width) / TOTAL_FRAME;
-	
-	// (function shine(){
-		
-		// context.globalCompositeOperation = "source-atop";
-		// context.drawImage(shineImg, shineX, 0, BOARD_WIDTH, BOARD_HEIGHT);
-		// context.globalCompositeOperation = "source-over";
-		
-		// shineX += deltaShineX;
-		
-		// if(shineX <= BOARD_WIDTH){
-			// requestAnimationFrame(shine);
-		// }
-	// })();
-// }

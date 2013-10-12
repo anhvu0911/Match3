@@ -14,12 +14,12 @@ var TOKEN_PER_ROW = 8;
 var TOKEN_PER_COL = 8;
 var BOARD_WIDTH = CELL_SIZE * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
 var BOARD_HEIGHT = CELL_SIZE * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
-var TOTAL_FRAME = 100;//26;
+var TOTAL_FRAME = 26;
 var IMAGE_SET = "images/elemental/";
 // var IMAGE_SET = "images/browsers/";
 
 // 7 Token types
-var NUMBER_OF_TOKEN_TYPE=4;//7;
+var NUMBER_OF_TOKEN_TYPE=5;//7;
 var RED = 0;
 var ORANGE = 1;
 var YELLOW = 2;
@@ -328,7 +328,7 @@ function BlackHoleToken(){
 		context.fillRect(token.x,token.y,TOKEN_SIZE,TOKEN_SIZE);
 	}
 	
-	this.explode = function(match, token){	
+	this.explode = function(match, token){
 	
 		//Explode tokens not in range
 		match.forEach(function(t) {
@@ -367,6 +367,8 @@ function BlackHoleToken(){
 				}
 			}
 		}
+		
+		return TOTAL_FRAME;
 	}
 }
 
@@ -385,11 +387,13 @@ function ShurikenToken(){
 		var startY = 0;
 		var endX = 0;
 		var endY = 0;
-			
+		
+		var m = [];
+		
 		// Slash to top
 		if(token.row > 0){
-			for(var i = token.row - 1; i >= 0; i--){
-				match.push(board[token.col][i]);
+			for(var i = 0; i <= token.row - 1; i++){
+				m.push([board[token.col][i], SLASH_VERTICAL_STATE, token.row-i]);
 			}
 			
 			startX = board[token.col][token.row - 1].x + TOKEN_SIZE/2 + slashImg.height/2;
@@ -403,7 +407,7 @@ function ShurikenToken(){
 		// Slash to bottom
 		if(token.row < TOKEN_PER_ROW-1){
 			for(var i = token.row + 1; i <= TOKEN_PER_ROW-1; i++){
-				match.push(board[token.col][i]);
+				m.push([board[token.col][i], SLASH_VERTICAL_STATE, i - token.row - 1]);
 			}
 			
 			startX = board[token.col][token.row + 1].x + TOKEN_SIZE/2 + slashImg.height/2 ;
@@ -416,8 +420,8 @@ function ShurikenToken(){
 		
 		// Slash to left
 		if(token.col > 0){
-			for(var i = token.col - 1; i >= 0; i--){
-				match.push(board[i][token.row]);
+			for(var i = 0; i <= token.col - 1; i++){
+				m.push([board[i][token.row], SLASH_HORIZONTAL_STATE, token.col - 1 - i]);
 			}
 			
 			startX = board[token.col-1][token.row].x + TOKEN_SIZE;
@@ -431,7 +435,7 @@ function ShurikenToken(){
 		// Slash to right
 		if(token.col < TOKEN_PER_COL-1){
 			for(var i = token.col + 1; i <= TOKEN_PER_COL-1; i++){
-				match.push(board[i][token.row]);
+				m.push([board[i][token.row], SLASH_HORIZONTAL_STATE, i - token.col - 1]);
 			}
 			
 			startX = board[token.col + 1][token.row].x - TOKEN_SIZE/4;
@@ -442,7 +446,7 @@ function ShurikenToken(){
 			slash(startX, startY, (endX - startX) + (endY - startY), 0);
 		}
 		
-		function slash(startX, startY, totalWidth, rotate, callback){
+		function slash(startX, startY, totalWidth, rotate){
 			var frame = 0;
 			var total_frame = TOTAL_FRAME / 2;
 			var slashSectionLength = Math.round(total_frame/2);
@@ -468,14 +472,21 @@ function ShurikenToken(){
 				// Finish?
 				if (frame < total_frame){
 					requestAnimationFrame(drawSlash);
-				} else {
-					if (typeof(callback) == 'function'){
-						callback();
-					}
 				}
 			})();
 		}
-	
+		
+		waitForAnimationFinish(TOTAL_FRAME/2, function(){
+			m.forEach(function (mm){
+				match.push(mm[0]);
+			
+				waitForAnimationFinish(mm[2]*10, function(){
+					mm[0].setState(mm[1]);
+				});
+			});
+		});
+		
+		return TOTAL_FRAME + 10*Math.max(token.col, token.row, TOKEN_PER_COL - 1 - token.col, TOKEN_PER_ROW - 1 - token.row);
 	}
 }
 
@@ -506,5 +517,7 @@ function SpecialToken(){
 		waitForAnimationFinish(TOTAL_FRAME, function(){
 			dropDown([match]);
 		});
+		
+		return TOTAL_FRAME;
 	}
 }

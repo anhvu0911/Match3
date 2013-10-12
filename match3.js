@@ -354,15 +354,26 @@ function deduplicateInMatchList(matchLists){
 function explode(matchLists) {
 	deduplicateInMatchList(matchLists);
 	
-	matchLists.forEach(function(match){
-		var specialToken = decideSpecialToken(match);
+	matchLists.forEach(function(match){	
+		var boom = false;
+		match.forEach(function(token) {
+			if(token.special){
+				token.special.explode(match, token);
+				boom = true;
+				return;
+			}
+		});
 		
-		// Other match explodes normally
-		if(specialToken == null){
-			match.forEach(function(token) {
-				token.setState(EXPLODE_STATE);
-			});
-		}
+		if(!boom){
+			var specialToken = decideSpecialToken(match);
+			
+			// Other match explodes normally
+			if(specialToken == null){
+				match.forEach(function(token) {
+					token.setState(EXPLODE_STATE);
+				});
+			}
+		} 
 	});
 	
 	waitForAnimationFinish(TOTAL_FRAME, function(){
@@ -416,7 +427,6 @@ function explode(matchLists) {
 			specialToken = match.pop();
 				console.log(match.indexOf(specialToken) + "    lucky you!   " + specialToken);
 			match.splice(match.indexOf(specialToken),1);
-			
 			specialToken.special = new TestToken();
 		}
 		
@@ -429,96 +439,6 @@ function explode(matchLists) {
 		return specialToken;
 	}
 }
-
-
-/*function explode(matchLists){	
-	matchLists.forEach(function(match){
-	
-		// horizontal slash
-		if (match[0].row == match[1].row){
-			slash(match[0].x - TOKEN_SIZE/4, 
-				match[0].y + TOKEN_SIZE/2 - slashImg.height/2,
-				match[match.length-1].x + TOKEN_SIZE, 
-				match[match.length-1].y + TOKEN_SIZE/2 - slashImg.height/2, 
-				function(){
-				  	match.forEach(function(token) {
-				  		token.setState(SLASH_HORIZONTAL_STATE);
-				  	});
-				});
-				  
-		// vertical slash
-		} else {
-			slash(match[0].x + TOKEN_SIZE/2 + slashImg.height/2, 
-				match[0].y - TOKEN_SIZE/4,
-				match[match.length-1].x + TOKEN_SIZE/2 + slashImg.height/2, 
-				match[match.length-1].y + TOKEN_SIZE, 
-				function(){
-				  	match.forEach(function(token) {
-				  		token.setState(SLASH_VERTICAL_STATE);
-				  	});
-				},
-				Math.PI/2);
-		}
-	});
-	
-	function slash(startX, startY, endX, endY, callback, rotate){
-		var frame = 0;
-		var total_frame = TOTAL_FRAME / 2;
-		var slashSectionLength = Math.round(total_frame/2);
-		
-		var deltaWidth = ((endX - startX) + (endY - startY)) / slashSectionLength;
-		var width = deltaWidth;
-		var height = slashImg.height;
-		
-		if (rotate != undefined) {
-			drawVerticalSlash();
-		}else{
-			drawHorizontalSlash();
-		}
-		
-		function drawHorizontalSlash(){
-			context.drawImage(slashImg, startX, startY, width, height);
-		
-			frame++;
-			width += (frame <= slashSectionLength) ? deltaWidth : -deltaWidth;
-			startX += (frame <= slashSectionLength) ? 0 : deltaWidth;
-			
-			// Finish?
-			if (frame < total_frame){
-				requestAnimationFrame(drawHorizontalSlash);
-			} else {
-				if (typeof(callback) == 'function'){
-					callback();
-				}
-			}
-		};
-		
-		function drawVerticalSlash(){
-			context.translate(startX, startY);
-			context.rotate(rotate);
-			context.drawImage(slashImg, 0, 0, width, height);
-			context.rotate(-rotate);
-			context.translate(-startX, -startY);
-		
-			frame++;
-			width += (frame <= slashSectionLength) ? deltaWidth : -deltaWidth;
-			startY += (frame <= slashSectionLength) ? 0 : deltaWidth;
-			
-			// Finish?
-			if (frame < total_frame){
-				requestAnimationFrame(drawVerticalSlash);
-			} else {
-				if (typeof(callback) == 'function'){
-					callback();
-				}
-			}
-		};
-	}
-	
-	waitForAnimationFinish(TOTAL_FRAME, function(){
-		dropDown(deduplicateInMatchList(matchLists));
-	});
-}*/
 
 // TODO: Make animation of dropping
 // Temp: Replace with above appropriate tokens

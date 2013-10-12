@@ -77,6 +77,9 @@ Array.prototype.merge = function(array){
 Array.prototype.addToken = function(token){
 	var i = 0;
 	for(;i < this.length;i++){
+		if(token.isOnTheSameCellWith(this[i])){
+			return;
+		}
 		if(token.row < this[i].row){
 			break;
 		}
@@ -305,6 +308,42 @@ function BlackHoleToken(){
 		context.fillStyle="#fff";
 		context.fillRect(token.x,token.y,TOKEN_SIZE,TOKEN_SIZE);
 	}
+	
+	this.explode = function(match, token){	
+	
+		//Explode tokens not in range
+		match.forEach(function(t) {
+			if(!t.isAdjacentTo(token) && !t.isOnTheSameCellWith(token)){
+				t.setState(EXPLODE_STATE);
+			}
+		});
+		
+		var row = token.row;
+		var col = token.col;
+		
+		// Explode neighbor tokens
+		explodeAndAddToMatch(col-1,row-1); //top left
+		explodeAndAddToMatch(col,row-1);	//top
+		explodeAndAddToMatch(col+1,row-1);	//top right
+		
+		explodeAndAddToMatch(col-1,row);	// left
+		explodeAndAddToMatch(col+1,row);    // right
+		
+		explodeAndAddToMatch(col-1,row+1);  // bottom left
+		explodeAndAddToMatch(col,row+1);    // bottom
+		explodeAndAddToMatch(col+1,row+1);  // bottom right
+		
+		function explodeAndAddToMatch(col, row){
+			if(board[col] != undefined){
+				var t = board[col][row];
+				
+				if (t != undefined){
+					moveToken(t, t.x, t.y, token.x, token.y, TOTAL_FRAME/2);
+					match.addToken(t);
+				}
+			}
+		}
+	}
 }
 
 // 5-in-a-row match zig zag line = Shuriken! destroy tokens on the same row + column
@@ -313,12 +352,110 @@ function ShurikenToken(){
 		context.fillStyle="#34fe43";
 		context.fillRect(token.x,token.y,TOKEN_SIZE,TOKEN_SIZE);
 	}
+	
+	this.explode = function(match, token){
+		console.log("boom");
+	}
 }
+
+
+/*function explode(matchLists){	
+	matchLists.forEach(function(match){
+	
+		// horizontal slash
+		if (match[0].row == match[1].row){
+			slash(match[0].x - TOKEN_SIZE/4, 
+				match[0].y + TOKEN_SIZE/2 - slashImg.height/2,
+				match[match.length-1].x + TOKEN_SIZE, 
+				match[match.length-1].y + TOKEN_SIZE/2 - slashImg.height/2, 
+				function(){
+				  	match.forEach(function(token) {
+				  		token.setState(SLASH_HORIZONTAL_STATE);
+				  	});
+				});
+				  
+		// vertical slash
+		} else {
+			slash(match[0].x + TOKEN_SIZE/2 + slashImg.height/2, 
+				match[0].y - TOKEN_SIZE/4,
+				match[match.length-1].x + TOKEN_SIZE/2 + slashImg.height/2, 
+				match[match.length-1].y + TOKEN_SIZE, 
+				function(){
+				  	match.forEach(function(token) {
+				  		token.setState(SLASH_VERTICAL_STATE);
+				  	});
+				},
+				Math.PI/2);
+		}
+	});
+	
+	function slash(startX, startY, endX, endY, callback, rotate){
+		var frame = 0;
+		var total_frame = TOTAL_FRAME / 2;
+		var slashSectionLength = Math.round(total_frame/2);
+		
+		var deltaWidth = ((endX - startX) + (endY - startY)) / slashSectionLength;
+		var width = deltaWidth;
+		var height = slashImg.height;
+		
+		if (rotate != undefined) {
+			drawVerticalSlash();
+		}else{
+			drawHorizontalSlash();
+		}
+		
+		function drawHorizontalSlash(){
+			context.drawImage(slashImg, startX, startY, width, height);
+		
+			frame++;
+			width += (frame <= slashSectionLength) ? deltaWidth : -deltaWidth;
+			startX += (frame <= slashSectionLength) ? 0 : deltaWidth;
+			
+			// Finish?
+			if (frame < total_frame){
+				requestAnimationFrame(drawHorizontalSlash);
+			} else {
+				if (typeof(callback) == 'function'){
+					callback();
+				}
+			}
+		};
+		
+		function drawVerticalSlash(){
+			context.translate(startX, startY);
+			context.rotate(rotate);
+			context.drawImage(slashImg, 0, 0, width, height);
+			context.rotate(-rotate);
+			context.translate(-startX, -startY);
+		
+			frame++;
+			width += (frame <= slashSectionLength) ? deltaWidth : -deltaWidth;
+			startY += (frame <= slashSectionLength) ? 0 : deltaWidth;
+			
+			// Finish?
+			if (frame < total_frame){
+				requestAnimationFrame(drawVerticalSlash);
+			} else {
+				if (typeof(callback) == 'function'){
+					callback();
+				}
+			}
+		};
+	}
+	
+	waitForAnimationFinish(TOTAL_FRAME, function(){
+		dropDown(deduplicateInMatchList(matchLists));
+	});
+}*/
 
 // more than 7-in-a-row match. Not even know what this is?
 function TestToken(){	
 	this.draw = function(token){
 		context.fillStyle="#fe3443";
 		context.fillRect(token.x,token.y,TOKEN_SIZE,TOKEN_SIZE);
+	}
+	
+	this.explode = function(match, token){
+		console.log("boom");
 	}
 }

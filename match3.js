@@ -64,6 +64,10 @@ function main(){
 	
 	checkMatches();
 	draw();
+	
+	board[3][3].setType(SPECIAL);
+	// board[3][4].special = new BlackHoleToken();
+	board[3][4].special = new ShurikenToken();
 }
 
 // register mouse event
@@ -231,35 +235,44 @@ function onMouseMove(e){
 // Swap token a and b
 // swapBack: a boolean - if after swap, no match found, swap back
 function swap(a, b, swapBack){
+	
 	toggleClickEvent(false);
 	toggleMouseMoveEvent(false);
-	board[oldHoverCell.col][oldHoverCell.row].setState(NORMAL_STATE);
-	
-	var frame = 0;
-	var deltaX = (b.x - a.x) / TOTAL_FRAME;
-	var deltaY = (b.y - a.y) / TOTAL_FRAME;
-	
-	(function moveSwappedToken(){
-		a.x += deltaX;
-		a.y += deltaY;
+
+	// If one is special token, destroy all tokens of the same type as the other
+	if(a.type == SPECIAL){
+		a.special.explode([a], a, b.type);
+	}else if (b.type == SPECIAL){
+		b.special.explode([b], b, a.type);
+	}else{
+		board[oldHoverCell.col][oldHoverCell.row].setState(NORMAL_STATE);
 		
-		b.x -= deltaX;
-		b.y -= deltaY;
-	
-		frame++;
-		if(frame == TOTAL_FRAME){
-			toggleClickEvent(true);
-			toggleMouseMoveEvent(true);
-			a.swapWith(b);
-			if(!swapBack){
-				checkMatches(function(){
-					swap(a,b, true);
-				}); // No match found, swap again
+		var frame = 0;
+		var deltaX = (b.x - a.x) / TOTAL_FRAME;
+		var deltaY = (b.y - a.y) / TOTAL_FRAME;
+		
+		(function moveSwappedToken(){
+			a.x += deltaX;
+			a.y += deltaY;
+			
+			b.x -= deltaX;
+			b.y -= deltaY;
+		
+			frame++;
+			if(frame == TOTAL_FRAME){
+				toggleClickEvent(true);
+				toggleMouseMoveEvent(true);
+				a.swapWith(b);
+				if(!swapBack){
+					checkMatches(function(){
+						swap(a,b, true);
+					}); // No match found, swap again
+				}
+			}else{
+				requestAnimationFrame(moveSwappedToken);
 			}
-		}else{
-			requestAnimationFrame(moveSwappedToken);
-		}
-	})();
+		})();
+	}
 }
 
 // Find the list of matches, auto-call explode
@@ -277,7 +290,7 @@ function checkMatches(callback){
 		
 	// Found some matches, explode them!
 	if(matchLists.length > 0){
-		explode(matchLists);
+		explode(deduplicateInMatchList(matchLists));
 	} else {
 		if (typeof(callback) == 'function') callback();
 	}
@@ -352,8 +365,6 @@ function deduplicateInMatchList(matchLists){
 
 // TODO: Animation Explosion effect
 function explode(matchLists) {
-	deduplicateInMatchList(matchLists);
-	
 	matchLists.forEach(function(match){	
 		var boom = false;
 		match.forEach(function(token) {
@@ -366,9 +377,14 @@ function explode(matchLists) {
 		
 		if(!boom){
 			var specialToken = decideSpecialToken(match);
-			
-			// Other match explodes normally
-			if(specialToken == null){
+				
+			// Gather tokens to create special token
+			if(specialToken){
+				match.forEach(function(token) {
+					moveToken(token, token.x, token.y, specialToken.x, specialToken.y, TOTAL_FRAME/2);
+				});
+			// Other match explodes normally	
+			} else {
 				match.forEach(function(token) {
 					token.setState(EXPLODE_STATE);
 				});
@@ -413,27 +429,13 @@ function explode(matchLists) {
 				console.log("5 I straight line: " + specialToken);
 				
 		// 5-in-a-row match on a zig zag line = shuriken
-		} else if (match.length == 6 || match.length == 7){
+		} else if (match.length > 5){
 			specialToken = match.pop();
 			
 				console.log(match.indexOf(specialToken) + "    5 L: " + specialToken);
 				
 			match.splice(match.indexOf(specialToken),1);
 			specialToken.special = new ShurikenToken();
-				
-			
-		// more than 7 tokens, super special!!!!
-		} else if (match.length > 7){
-			specialToken = match.pop();
-				console.log(match.indexOf(specialToken) + "    lucky you!   " + specialToken);
-			match.splice(match.indexOf(specialToken),1);
-			specialToken.special = new TestToken();
-		}
-		
-		if(specialToken){
-			match.forEach(function(token) {
-				moveToken(token, token.x, token.y, specialToken.x, specialToken.y, TOTAL_FRAME/2);
-			});
 		}
 		
 		return specialToken;

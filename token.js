@@ -14,12 +14,12 @@ var TOKEN_PER_ROW = 8;
 var TOKEN_PER_COL = 8;
 var BOARD_WIDTH = CELL_SIZE * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
 var BOARD_HEIGHT = CELL_SIZE * TOKEN_PER_ROW - SPACE; //Minus the space of last tokens
-var TOTAL_FRAME = 26;
+var TOTAL_FRAME = 100;//26;
 var IMAGE_SET = "images/elemental/";
 // var IMAGE_SET = "images/browsers/";
 
 // 7 Token types
-var NUMBER_OF_TOKEN_TYPE=5;//7;
+var NUMBER_OF_TOKEN_TYPE=4;//7;
 var RED = 0;
 var ORANGE = 1;
 var YELLOW = 2;
@@ -155,15 +155,34 @@ function Token(col, row, type, img){
 	this.setType = function(type){
 		this.type = type;
 		switch(type){
-			case RED:	 this.img.src = IMAGE_SET + "red.png"; break;
-			case ORANGE: this.img.src = IMAGE_SET + "orange.png"; break;
-			case YELLOW: this.img.src = IMAGE_SET + "yellow.png"; break;
-			case GREEN:	 this.img.src = IMAGE_SET + "green.png"; break;
-			case BLUE:	 this.img.src = IMAGE_SET + "blue.png"; break;
-			case MAGENTA:this.img.src = IMAGE_SET + "magenta.png"; break;
-			case PURPLE: this.img.src = IMAGE_SET + "purple.png"; break;
-			case SPECIAL:this.img.src = IMAGE_SET + "special.png"; break;
-			default: 	 this.img.src = null; return;
+			case RED:	 
+				this.img.src = IMAGE_SET + "red.png"; 
+				break;
+			case ORANGE: 
+				this.img.src = IMAGE_SET + "orange.png"; 
+				break;
+			case YELLOW: 
+				this.img.src = IMAGE_SET + "yellow.png"; 
+				break;
+			case GREEN:	 
+				this.img.src = IMAGE_SET + "green.png"; 
+				break;
+			case BLUE:	 
+				this.img.src = IMAGE_SET + "blue.png"; 
+				break;
+			case MAGENTA:
+				this.img.src = IMAGE_SET + "magenta.png"; 
+				break;
+			case PURPLE: 
+				this.img.src = IMAGE_SET + "purple.png"; 
+				break;
+			case SPECIAL:
+				this.img.src = IMAGE_SET + "special.png"; 
+				this.special = new SpecialToken();
+				break;
+			default: 	 
+				this.img.src = null; 
+				return;
 		}
 	}
 	this.setState = function(state){
@@ -339,13 +358,19 @@ function BlackHoleToken(){
 				
 				if (t != undefined){
 					moveToken(t, t.x, t.y, token.x, token.y, TOTAL_FRAME/2);
-					match.addToken(t);
+					match.push(t);
+					
+					// TODO: Trigger another special, but exclude this one!
+					// if(t.special){
+						// t.special.explode(match,t);
+					// }
 				}
 			}
 		}
 	}
 }
 
+// TODO: Trigger another special, but exclude this one!
 // 5-in-a-row match zig zag line = Shuriken! destroy tokens on the same row + column
 function ShurikenToken(){	
 	this.draw = function(token){
@@ -354,108 +379,132 @@ function ShurikenToken(){
 	}
 	
 	this.explode = function(match, token){
-		console.log("boom");
+		console.log("explode shuriken");
+		
+		var startX = 0;
+		var startY = 0;
+		var endX = 0;
+		var endY = 0;
+			
+		// Slash to top
+		if(token.row > 0){
+			for(var i = token.row - 1; i >= 0; i--){
+				match.push(board[token.col][i]);
+			}
+			
+			startX = board[token.col][token.row - 1].x + TOKEN_SIZE/2 + slashImg.height/2;
+			startY = board[token.col][token.row - 1].y + TOKEN_SIZE;
+			endX = board[token.col][0].x + TOKEN_SIZE/2 + slashImg.height/2;
+			endY = board[token.col][0].y - TOKEN_SIZE/4;
+			
+			slash(startX, startY, (endX - startX) + (endY - startY), -Math.PI/2);
+		}
+		
+		// Slash to bottom
+		if(token.row < TOKEN_PER_ROW-1){
+			for(var i = token.row + 1; i <= TOKEN_PER_ROW-1; i++){
+				match.push(board[token.col][i]);
+			}
+			
+			startX = board[token.col][token.row + 1].x + TOKEN_SIZE/2 + slashImg.height/2 ;
+			startY = board[token.col][token.row + 1].y - TOKEN_SIZE/4;
+			endX = board[token.col][TOKEN_PER_ROW-1].x + TOKEN_SIZE/2 + slashImg.height/2;
+			endY = board[token.col][TOKEN_PER_ROW-1].y + TOKEN_SIZE;
+			
+			slash(startX, startY, (endX - startX) + (endY - startY), Math.PI/2);
+		}
+		
+		// Slash to left
+		if(token.col > 0){
+			for(var i = token.col - 1; i >= 0; i--){
+				match.push(board[i][token.row]);
+			}
+			
+			startX = board[token.col-1][token.row].x + TOKEN_SIZE;
+			startY = board[token.col-1][token.row].y + TOKEN_SIZE/2 - slashImg.height/2;
+			endX = board[0][token.row].x - TOKEN_SIZE/4;
+			endY = board[0][token.row].y + TOKEN_SIZE/2 - slashImg.height/2;
+			
+			slash(startX, startY, (endX - startX) + (endY - startY), Math.PI);
+		}
+		
+		// Slash to right
+		if(token.col < TOKEN_PER_COL-1){
+			for(var i = token.col + 1; i <= TOKEN_PER_COL-1; i++){
+				match.push(board[i][token.row]);
+			}
+			
+			startX = board[token.col + 1][token.row].x - TOKEN_SIZE/4;
+			startY = board[token.col + 1][token.row].y + TOKEN_SIZE/2 - slashImg.height/2;
+			endX = board[TOKEN_PER_COL-1][token.row].x + TOKEN_SIZE;
+			endY = board[TOKEN_PER_COL-1][token.row].y + TOKEN_SIZE/2 - slashImg.height/2;
+			
+			slash(startX, startY, (endX - startX) + (endY - startY), 0);
+		}
+		
+		function slash(startX, startY, totalWidth, rotate, callback){
+			var frame = 0;
+			var total_frame = TOTAL_FRAME / 2;
+			var slashSectionLength = Math.round(total_frame/2);
+			
+			var deltaWidth = Math.abs(totalWidth / slashSectionLength);
+			var width = deltaWidth;
+			var height = slashImg.height;
+			var deltaX = 0;
+			var deltaY = 0;
+			
+			(function drawSlash(){
+				context.translate(startX+deltaX, startY+deltaY);
+				context.rotate(rotate);
+				context.drawImage(slashImg, 0, 0, width, height);
+				context.rotate(-rotate);
+				context.translate(-startX-deltaX, -startY-deltaY);
+			
+				frame++;
+				width += (frame <= slashSectionLength) ? deltaWidth : -deltaWidth;
+				deltaX += (frame <= slashSectionLength) ? 0 : Math.cos(rotate) * deltaWidth;
+				deltaY += (frame <= slashSectionLength) ? 0 : Math.sin(rotate) * deltaWidth;
+				
+				// Finish?
+				if (frame < total_frame){
+					requestAnimationFrame(drawSlash);
+				} else {
+					if (typeof(callback) == 'function'){
+						callback();
+					}
+				}
+			})();
+		}
+	
 	}
 }
 
-
-/*function explode(matchLists){	
-	matchLists.forEach(function(match){
-	
-		// horizontal slash
-		if (match[0].row == match[1].row){
-			slash(match[0].x - TOKEN_SIZE/4, 
-				match[0].y + TOKEN_SIZE/2 - slashImg.height/2,
-				match[match.length-1].x + TOKEN_SIZE, 
-				match[match.length-1].y + TOKEN_SIZE/2 - slashImg.height/2, 
-				function(){
-				  	match.forEach(function(token) {
-				  		token.setState(SLASH_HORIZONTAL_STATE);
-				  	});
-				});
-				  
-		// vertical slash
-		} else {
-			slash(match[0].x + TOKEN_SIZE/2 + slashImg.height/2, 
-				match[0].y - TOKEN_SIZE/4,
-				match[match.length-1].x + TOKEN_SIZE/2 + slashImg.height/2, 
-				match[match.length-1].y + TOKEN_SIZE, 
-				function(){
-				  	match.forEach(function(token) {
-				  		token.setState(SLASH_VERTICAL_STATE);
-				  	});
-				},
-				Math.PI/2);
-		}
-	});
-	
-	function slash(startX, startY, endX, endY, callback, rotate){
-		var frame = 0;
-		var total_frame = TOTAL_FRAME / 2;
-		var slashSectionLength = Math.round(total_frame/2);
-		
-		var deltaWidth = ((endX - startX) + (endY - startY)) / slashSectionLength;
-		var width = deltaWidth;
-		var height = slashImg.height;
-		
-		if (rotate != undefined) {
-			drawVerticalSlash();
-		}else{
-			drawHorizontalSlash();
-		}
-		
-		function drawHorizontalSlash(){
-			context.drawImage(slashImg, startX, startY, width, height);
-		
-			frame++;
-			width += (frame <= slashSectionLength) ? deltaWidth : -deltaWidth;
-			startX += (frame <= slashSectionLength) ? 0 : deltaWidth;
-			
-			// Finish?
-			if (frame < total_frame){
-				requestAnimationFrame(drawHorizontalSlash);
-			} else {
-				if (typeof(callback) == 'function'){
-					callback();
-				}
-			}
-		};
-		
-		function drawVerticalSlash(){
-			context.translate(startX, startY);
-			context.rotate(rotate);
-			context.drawImage(slashImg, 0, 0, width, height);
-			context.rotate(-rotate);
-			context.translate(-startX, -startY);
-		
-			frame++;
-			width += (frame <= slashSectionLength) ? deltaWidth : -deltaWidth;
-			startY += (frame <= slashSectionLength) ? 0 : deltaWidth;
-			
-			// Finish?
-			if (frame < total_frame){
-				requestAnimationFrame(drawVerticalSlash);
-			} else {
-				if (typeof(callback) == 'function'){
-					callback();
-				}
-			}
-		};
-	}
-	
-	waitForAnimationFinish(TOTAL_FRAME, function(){
-		dropDown(deduplicateInMatchList(matchLists));
-	});
-}*/
-
-// more than 7-in-a-row match. Not even know what this is?
-function TestToken(){	
+// 5-in-a-row match. Booming all tokens of the same type
+function SpecialToken(){	
 	this.draw = function(token){
-		context.fillStyle="#fe3443";
-		context.fillRect(token.x,token.y,TOKEN_SIZE,TOKEN_SIZE);
 	}
 	
-	this.explode = function(match, token){
-		console.log("boom");
+	this.explode = function(match, token, type){
+	
+		type = (type == null) ? Math.round(Math.random()*NUMBER_OF_TOKEN_TYPE) : type;
+	
+		// TODO: If two special meets!, the whold board goes crazy!
+		board.forEach(function(boardCol, i){
+			boardCol.forEach(function (t, j){
+				if (t.type == type || type == SPECIAL){
+					match.push(t);
+					t.setState(EXPLODE_STATE);
+					
+					// TODO: Trigger another special, but exclude this one!
+					// if(t.special){
+						// t.special.explode(match,t);
+					// }
+				}
+			});
+		});
+		
+		waitForAnimationFinish(TOTAL_FRAME, function(){
+			dropDown([match]);
+		});
 	}
 }

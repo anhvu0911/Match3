@@ -1,4 +1,4 @@
-/*!
+/*
  * a match 3 game, practice on using HTML5 canvas 
  * https://github.com/anhvu0911/Match3
  *
@@ -6,7 +6,7 @@
  *
  * Date: 2013-04-09
  */
- 
+
 //========================================================
 // MAIN METHODS
 //========================================================
@@ -16,6 +16,7 @@ function main(){
 	
 	slashImg = document.getElementById("slash");
 	shineImg = document.getElementById("shine");
+	sunImg = document.getElementById("sun");
 	
 	requestAnimationFrame = window.requestAnimationFrame ||
         window.webkitRequestAnimationFrame ||
@@ -65,9 +66,11 @@ function main(){
 	checkMatches();
 	draw();
 	
-	board[3][3].setType(SPECIAL);
-	// board[3][4].special = new BlackHoleToken();
-	board[3][4].special = new ShurikenToken();
+	// board[3][3].setType(SPECIAL);
+	// board[2][2].special = new MoonToken();
+	board[3][3].special = new SunToken();
+	// board[3][4].special = new SunToken();
+	board[3][4].special = new MoonToken();
 }
 
 // register mouse event
@@ -213,7 +216,6 @@ function onMouseMove(e){
 			isSelectingFirst = !isSelectingFirst;
 		}*/
 	
-	// TODO: make hover a instance variable? not go with hint
 	// Hover
 	} else{
 		if(oldHoverCell.row != hoverCell.row || oldHoverCell.col != hoverCell.col){
@@ -241,9 +243,9 @@ function swap(a, b, swapBack){
 
 	// If one is special token, destroy all tokens of the same type as the other
 	if(a.type == SPECIAL){
-		a.special.explode([a], a, b.type);
+		a.special.explode([a], a, null, b.type);
 	}else if (b.type == SPECIAL){
-		b.special.explode([b], b, a.type);
+		b.special.explode([b], b, null, a.type);
 	}else{
 		board[oldHoverCell.col][oldHoverCell.row].setState(NORMAL_STATE);
 		
@@ -378,7 +380,7 @@ function explode(matchLists) {
 		});
 		
 		if(!boom){
-			var specialToken = decideSpecialToken(match);
+			var specialToken = decideStarToken(match);
 				
 			// Gather tokens to create special token
 			if(specialToken){
@@ -401,7 +403,7 @@ function explode(matchLists) {
 	// 4 matches = black hole
 	// >=5 matches I = same color
 	// >=5 matches L,T = shuriken
-	function decideSpecialToken(match){
+	function decideStarToken(match){
 		var specialToken = null;
 		
 		// create black hole token at selected token, or the 2nd in match
@@ -419,7 +421,7 @@ function explode(matchLists) {
 			
 			specialToken = match[index];
 			match.splice(index,1);
-			specialToken.special = new BlackHoleToken();
+			specialToken.special = new SunToken();
 				console.log("4 match: " + specialToken);
 			
 		// 5-in-a-row match on a straight line
@@ -437,7 +439,7 @@ function explode(matchLists) {
 				console.log(match.indexOf(specialToken) + "    5 L: " + specialToken);
 				
 			match.splice(match.indexOf(specialToken),1);
-			specialToken.special = new ShurikenToken();
+			specialToken.special = new MoonToken();
 		}
 		
 		return specialToken;

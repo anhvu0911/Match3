@@ -1,4 +1,4 @@
-/*!
+/*
  * a match 3 game, practice on using HTML5 canvas 
  * https://github.com/anhvu0911/Match3
  *
@@ -19,7 +19,7 @@ var IMAGE_SET = "images/elemental/";
 // var IMAGE_SET = "images/browsers/";
 
 // 7 Token types
-var NUMBER_OF_TOKEN_TYPE=5;//7;
+var NUMBER_OF_TOKEN_TYPE=5;
 var RED = 0;
 var ORANGE = 1;
 var YELLOW = 2;
@@ -48,6 +48,7 @@ var board = [];
 // Image resources
 var slashImg;
 var shineImg;
+var sunImg;
 
 // =============================================
 // OVERRIDE METHOD
@@ -90,7 +91,7 @@ Array.prototype.addToken = function(token){
 }
 
 //========================================================
-// CLASS
+// TOKEN
 //========================================================
 
 function Cell(col, row){
@@ -178,7 +179,7 @@ function Token(col, row, type, img){
 				break;
 			case SPECIAL:
 				this.img.src = IMAGE_SET + "special.png"; 
-				this.special = new SpecialToken();
+				this.special = new StarToken();
 				break;
 			default: 	 
 				this.img.src = null; 
@@ -321,14 +322,50 @@ function Token(col, row, type, img){
 	}
 }
 
-// 4-in-a-row match = Black Hole! destroy adjacent tokens
-function BlackHoleToken(){	
+// =============================================
+// LEVEL OBJECTIVE
+// =============================================
+// - Score up to, within time
+// - Collect certain token types (including special)
+// - Destroy brick. Hard brick > Soft brick > Normal brick
+// - Get certain token type into certain position (Into hear shape? Rectangle shape)
+
+
+// =============================================
+// COMBO MATCH
+// =============================================
+// red = paint, turn random tokens to a specific type
+// orange = add turn/time, depend on level objective
+// yellow = double score in 7 -> 12 seconds
+// blue = show hint
+// green = 
+// magenta = turn 3 -> 6 random tokens to special
+// purple = 
+
+// =============================================
+// SPECIAL TOKENS
+// =============================================
+// Sun = destroy neighbors
+// Moon = destroy same row col
+// Star = destroy same type
+// Sun + Sun = Black hole, destroy neighbors x 2
+// Sun + Moon = New Star, gather all tokens in X shape, turn into Star
+// Sun + Star = New Sun, turn same type as Sun, into Sun, destroy as Sun
+// Moon + Moon = Nova (Big Slash type), destroy 3 row, 3 col
+// Moon + Star = New Moon, turn same type as Moon, into Moon, destroy as Moon
+// Star + Star = Big Bang, destroy all tokens
+
+
+// 4-in-a-row match = destroy adjacent tokens
+function SunToken(){	
 	this.draw = function(token){
 		context.fillStyle="#fff";
 		context.fillRect(token.x,token.y,TOKEN_SIZE,TOKEN_SIZE);
 	}
 	
-	this.explode = function(match, token){
+	this.explode = function(match, token, excludeList){
+	
+		excludeList = (excludeList == null) ? [] : excludeList;
 	
 		//Explode tokens not in range
 		match.forEach(function(t) {
@@ -357,13 +394,15 @@ function BlackHoleToken(){
 				var t = board[col][row];
 				
 				if (t != undefined){
-					moveToken(t, t.x, t.y, token.x, token.y, TOTAL_FRAME/2);
+					// moveToken(t, t.x, t.y, token.x, token.y, TOTAL_FRAME/2);
+					t.setState(EXPLODE_STATE);
 					match.push(t);
 					
-					// TODO: Trigger another special, but exclude this one!
-					// if(t.special){
-						// t.special.explode(match,t);
-					// }
+					// Trigger another special, but exclude this one!
+					if(t.special && (excludeList.indexOf(t) < 0)){
+						excludeList.addToken(token);
+						t.special.explode(match,t, excludeList);
+					}
 				}
 			}
 		}
@@ -373,20 +412,15 @@ function BlackHoleToken(){
 }
 
 // TODO: Trigger another special, but exclude this one!
-// 5-in-a-row match zig zag line = Shuriken! destroy tokens on the same row + column
-function ShurikenToken(){	
+// 5-in-a-row match zig zag line = destroy tokens on the same row + column
+function MoonToken(){	
 	this.draw = function(token){
 		context.fillStyle="#34fe43";
 		context.fillRect(token.x,token.y,TOKEN_SIZE,TOKEN_SIZE);
 	}
 	
-	this.explode = function(match, token){
-		console.log("explode shuriken");
-		
-		var startX = 0;
-		var startY = 0;
-		var endX = 0;
-		var endY = 0;
+	this.explode = function(match, token, excludeList){
+		excludeList = (excludeList == null) ? [] : excludeList;
 		
 		var m = [];
 		
@@ -396,12 +430,11 @@ function ShurikenToken(){
 				m.push([board[token.col][i], SLASH_VERTICAL_STATE, token.row-i]);
 			}
 			
-			startX = board[token.col][token.row - 1].x + TOKEN_SIZE/2 + slashImg.height/2;
-			startY = board[token.col][token.row - 1].y + TOKEN_SIZE;
-			endX = board[token.col][0].x + TOKEN_SIZE/2 + slashImg.height/2;
-			endY = board[token.col][0].y - TOKEN_SIZE/4;
-			
-			slash(startX, startY, (endX - startX) + (endY - startY), -Math.PI/2);
+			slash(board[token.col][token.row - 1].x + TOKEN_SIZE/2 + slashImg.height/2, 
+				board[token.col][token.row - 1].y + TOKEN_SIZE, 
+				board[token.col][0].x + TOKEN_SIZE/2 + slashImg.height/2, 
+				board[token.col][0].y - TOKEN_SIZE/4,
+				-Math.PI/2);
 		}
 		
 		// Slash to bottom
@@ -410,12 +443,11 @@ function ShurikenToken(){
 				m.push([board[token.col][i], SLASH_VERTICAL_STATE, i - token.row - 1]);
 			}
 			
-			startX = board[token.col][token.row + 1].x + TOKEN_SIZE/2 + slashImg.height/2 ;
-			startY = board[token.col][token.row + 1].y - TOKEN_SIZE/4;
-			endX = board[token.col][TOKEN_PER_ROW-1].x + TOKEN_SIZE/2 + slashImg.height/2;
-			endY = board[token.col][TOKEN_PER_ROW-1].y + TOKEN_SIZE;
-			
-			slash(startX, startY, (endX - startX) + (endY - startY), Math.PI/2);
+			slash(board[token.col][token.row + 1].x + TOKEN_SIZE/2 + slashImg.height/2, 
+				board[token.col][token.row + 1].y - TOKEN_SIZE/4, 
+				board[token.col][TOKEN_PER_ROW-1].x + TOKEN_SIZE/2 + slashImg.height/2, 
+				board[token.col][TOKEN_PER_ROW-1].y + TOKEN_SIZE,
+				Math.PI/2);
 		}
 		
 		// Slash to left
@@ -424,12 +456,11 @@ function ShurikenToken(){
 				m.push([board[i][token.row], SLASH_HORIZONTAL_STATE, token.col - 1 - i]);
 			}
 			
-			startX = board[token.col-1][token.row].x + TOKEN_SIZE;
-			startY = board[token.col-1][token.row].y + TOKEN_SIZE/2 - slashImg.height/2;
-			endX = board[0][token.row].x - TOKEN_SIZE/4;
-			endY = board[0][token.row].y + TOKEN_SIZE/2 - slashImg.height/2;
-			
-			slash(startX, startY, (endX - startX) + (endY - startY), Math.PI);
+			slash(board[token.col-1][token.row].x + TOKEN_SIZE, 
+				board[token.col-1][token.row].y + TOKEN_SIZE/2 - slashImg.height/2,
+				board[0][token.row].x - TOKEN_SIZE/4,
+				board[0][token.row].y + TOKEN_SIZE/2 - slashImg.height/2,
+				Math.PI);
 		}
 		
 		// Slash to right
@@ -438,20 +469,19 @@ function ShurikenToken(){
 				m.push([board[i][token.row], SLASH_HORIZONTAL_STATE, i - token.col - 1]);
 			}
 			
-			startX = board[token.col + 1][token.row].x - TOKEN_SIZE/4;
-			startY = board[token.col + 1][token.row].y + TOKEN_SIZE/2 - slashImg.height/2;
-			endX = board[TOKEN_PER_COL-1][token.row].x + TOKEN_SIZE;
-			endY = board[TOKEN_PER_COL-1][token.row].y + TOKEN_SIZE/2 - slashImg.height/2;
-			
-			slash(startX, startY, (endX - startX) + (endY - startY), 0);
+			slash(board[token.col + 1][token.row].x - TOKEN_SIZE/4, 
+				board[token.col + 1][token.row].y + TOKEN_SIZE/2 - slashImg.height/2,
+				board[TOKEN_PER_COL-1][token.row].x + TOKEN_SIZE, 
+				board[TOKEN_PER_COL-1][token.row].y + TOKEN_SIZE/2 - slashImg.height/2,
+				0);
 		}
 		
-		function slash(startX, startY, totalWidth, rotate){
+		function slash(startX, startY, endX, endY, rotate){
 			var frame = 0;
 			var total_frame = TOTAL_FRAME / 2;
 			var slashSectionLength = Math.round(total_frame/2);
 			
-			var deltaWidth = Math.abs(totalWidth / slashSectionLength);
+			var deltaWidth = Math.abs((endX - startX) + (endY - startY)) / slashSectionLength;
 			var width = deltaWidth;
 			var height = slashImg.height;
 			var deltaX = 0;
@@ -480,24 +510,38 @@ function ShurikenToken(){
 			m.forEach(function (mm){
 				match.push(mm[0]);
 			
-				waitForAnimationFinish(mm[2]*10, function(){
+				waitForAnimationFinish(mm[2]*8, function(){
 					mm[0].setState(mm[1]);
 				});
+				
+				// TODO: Trigger another special, but exclude this one!
+				if(mm[0].special && (excludeList.indexOf(mm[0]) < 0)){
+					excludeList.addToken(token);
+					mm[0].special.explode(match, mm[0], excludeList);
+				}
 			});
 		});
 		
-		return TOTAL_FRAME + 10*Math.max(token.col, token.row, TOKEN_PER_COL - 1 - token.col, TOKEN_PER_ROW - 1 - token.row);
+		return TOTAL_FRAME + 8*Math.max(token.col, token.row, TOKEN_PER_COL - 1 - token.col, TOKEN_PER_ROW - 1 - token.row);
 	}
 }
 
-// 5-in-a-row match. Booming all tokens of the same type
-function SpecialToken(){	
+// Dodegon
+// 5-in-a-row match = Destroy all tokens of the same type
+function StarToken(){	
 	this.draw = function(token){
 	}
 	
-	this.explode = function(match, token, type){
+	this.explode = function(match, token, excludeList, type){
+		if(type != null){
+			waitForAnimationFinish(TOTAL_FRAME, function(){
+				dropDown([match]);
+			});
+		} else {
+			type = Math.round(Math.random()*NUMBER_OF_TOKEN_TYPE);
+		}
 	
-		type = (type == null) ? Math.round(Math.random()*NUMBER_OF_TOKEN_TYPE) : type;
+		excludeList = (excludeList == null) ? [] : excludeList;
 	
 		// TODO: If two special meets!, the whold board goes crazy!
 		board.forEach(function(boardCol, i){
@@ -507,15 +551,12 @@ function SpecialToken(){
 					t.setState(EXPLODE_STATE);
 					
 					// TODO: Trigger another special, but exclude this one!
-					// if(t.special){
-						// t.special.explode(match,t);
-					// }
+					if(t.special && (excludeList.indexOf(t) < 0)){
+						excludeList.addToken(token);
+						t.special.explode(match, t, excludeList);
+					}
 				}
 			});
-		});
-		
-		waitForAnimationFinish(TOTAL_FRAME, function(){
-			dropDown([match]);
 		});
 		
 		return TOTAL_FRAME;
